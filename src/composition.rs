@@ -1,5 +1,6 @@
 use std::collections::hash_map::{HashMap, Iter};
 use std::ops::{Index,Add, Sub, Mul, AddAssign, MulAssign, SubAssign};
+use std::iter::{FromIterator};
 use std::cmp;
 use std::fmt;
 use std::hash;
@@ -109,6 +110,11 @@ pub struct ChemicalComposition<'a> {
 impl<'a> ChemicalComposition<'a> {
     pub fn new() -> ChemicalComposition<'a> {
         ChemicalComposition {..Default::default()}
+    }
+
+    pub fn from(elements: Vec<(&'a str, i32)>) -> ChemicalComposition<'a> {
+        let composition: ChemicalComposition<'a> = elements.iter().cloned().collect();
+        return composition;
     }
 
     pub fn calc_mass(&self) -> f64 {
@@ -255,3 +261,23 @@ impl<'a> MulAssign<i32> for ChemicalComposition<'a> {
     }
 }
 
+impl<'a> FromIterator<(ElementSpecification<'a>, i32)> for ChemicalComposition<'a> {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (ElementSpecification<'a>, i32)> {
+        let mut composition = ChemicalComposition::new();
+        for (k, v) in iter {
+            composition.inc(k, v);
+        }
+        return composition;
+    }
+}
+
+impl<'a> FromIterator<(&'a str, i32)> for ChemicalComposition<'a> {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (&'a str, i32)> {
+        let mut composition = ChemicalComposition::new();
+        for (k, v) in iter {
+            let elt_spec = ElementSpecification::parse(k).unwrap();
+            composition.inc(elt_spec, v);
+        }
+        return composition;
+    }
+}
