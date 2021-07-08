@@ -213,6 +213,17 @@ impl<'a> Index<&ElementSpecification<'a>> for ChemicalComposition<'a> {
     }
 }
 
+impl<'a> PartialEq<ChemicalComposition<'a>> for ChemicalComposition<'a> {
+    fn eq(&self, other: &ChemicalComposition<'a>) -> bool {
+        self.composition == other.composition
+    }
+
+    fn ne(&self, other: &ChemicalComposition<'a>) -> bool {
+        !(self.composition == other.composition)
+    }
+}
+
+
 impl<'a> Add<&ChemicalComposition<'a>> for &ChemicalComposition<'a> {
     type Output = ChemicalComposition<'a>;
 

@@ -104,3 +104,5 @@
 //     let mut destination = fs::File::create("src/table.rs").unwrap();
 //     destination.write(out.as_bytes()).unwrap();
 // }
+
+fn main() {}
