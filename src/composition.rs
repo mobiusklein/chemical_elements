@@ -10,18 +10,18 @@ use crate::element::{ Element };
 use crate::table::PERIODIC_TABLE;
 
 #[derive(Debug, Clone)]
-pub struct ElementSpecification<'a> {
-    pub element: &'a Element,
+pub struct ElementSpecification<'element> {
+    pub element: &'element Element,
     pub isotope: u16
 }
 
-impl<'a> hash::Hash for ElementSpecification<'a> {
+impl<'element> hash::Hash for ElementSpecification<'element> {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         self.element.hash(state);
     }
 }
 
-impl<'a> fmt::Display for ElementSpecification<'a> {
+impl<'element> fmt::Display for ElementSpecification<'element> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,
@@ -31,8 +31,8 @@ impl<'a> fmt::Display for ElementSpecification<'a> {
     }
 }
 
-impl<'a> ElementSpecification<'a> {
-    pub fn new(element: &'a Element, isotope: u16) -> ElementSpecification<'a> {
+impl<'element> ElementSpecification<'element> {
+    pub fn new(element: &'element Element, isotope: u16) -> ElementSpecification<'element> {
         return ElementSpecification { element, isotope };
     }
 
@@ -107,14 +107,10 @@ pub struct ChemicalComposition<'a> {
     pub mass_cache: Option<f64>
 }
 
-impl<'a> ChemicalComposition<'a> {
-    pub fn new() -> ChemicalComposition<'a> {
-        ChemicalComposition {..Default::default()}
-    }
 
-    pub fn from(elements: Vec<(&'a str, i32)>) -> ChemicalComposition<'a> {
-        let composition: ChemicalComposition<'a> = elements.iter().cloned().collect();
-        return composition;
+impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
+    pub fn new() -> ChemicalComposition<'lifespan> {
+        ChemicalComposition {..Default::default()}
     }
 
     pub fn calc_mass(&self) -> f64 {
@@ -150,24 +146,24 @@ impl<'a> ChemicalComposition<'a> {
         return mass;
     }
 
-    pub fn get(&self, elt_spec: &ElementSpecification<'a>) -> i32 {
+    pub fn get(&self, elt_spec: &ElementSpecification<'lifespan>) -> i32 {
         return match self.composition.get(elt_spec) {
             Some(i) => *i,
             None => 0
         };
     }
 
-    pub fn set(&mut self, elt_spec: ElementSpecification<'a>, count: i32) {
+    pub fn set(&mut self, elt_spec: ElementSpecification<'lifespan>, count: i32) {
         self.composition.insert(elt_spec, count);
         self.mass_cache = None;
     }
 
-    pub fn inc(&mut self, elt_spec: ElementSpecification<'a>, count: i32) {
+    pub fn inc(&mut self, elt_spec: ElementSpecification<'lifespan>, count: i32) {
         let i = self.get(&elt_spec);
         self.set(elt_spec, i + count);
     }
 
-    pub fn iter(&self) -> Iter<ElementSpecification<'a>, i32> {
+    pub fn iter(&self) -> Iter<ElementSpecification<'lifespan>, i32> {
         return (self.composition).iter();
     }
 
@@ -184,15 +180,16 @@ impl<'a> ChemicalComposition<'a> {
         return tokens.join("");
     }
 
-    fn _add_from(&mut self, other: &ChemicalComposition<'a>) {
+    pub fn _add_from(&'outer mut self, other: &'transient ChemicalComposition<'lifespan>) {
         for (key, val) in other.composition.iter() {
             self.inc(key.clone(), *val);
         }
     }
 
-    fn _sub_from(&mut self, other: &ChemicalComposition<'a>) {
+    pub fn _sub_from(&'outer mut self, other: &'transient ChemicalComposition<'lifespan>) {
         for (key, val) in other.composition.iter() {
-            self.inc(key.clone(), -(*val));
+            let newkey: ElementSpecification<'lifespan> = key.clone();
+            self.inc(newkey, -(*val));
         }
     }
 
@@ -204,48 +201,48 @@ impl<'a> ChemicalComposition<'a> {
     }
 }
 
-impl<'a> Index<&ElementSpecification<'a>> for ChemicalComposition<'a> {
+impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {
     type Output = i32;
 
-    fn index(&self, key: & ElementSpecification<'a>) -> &Self::Output {
+    fn index(&self, key: & ElementSpecification<'lifespan>) -> &Self::Output {
         let ent = self.composition.get(key);
         return ent.unwrap();
     }
 }
 
-impl<'a> PartialEq<ChemicalComposition<'a>> for ChemicalComposition<'a> {
-    fn eq(&self, other: &ChemicalComposition<'a>) -> bool {
+impl<'lifespan> PartialEq<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+    fn eq(&self, other: &ChemicalComposition<'lifespan>) -> bool {
         self.composition == other.composition
     }
 
-    fn ne(&self, other: &ChemicalComposition<'a>) -> bool {
+    fn ne(&self, other: &ChemicalComposition<'lifespan>) -> bool {
         !(self.composition == other.composition)
     }
 }
 
 
-impl<'a> Add<&ChemicalComposition<'a>> for &ChemicalComposition<'a> {
-    type Output = ChemicalComposition<'a>;
+impl<'lifespan> Add<&ChemicalComposition<'lifespan>> for &ChemicalComposition<'lifespan> {
+    type Output = ChemicalComposition<'lifespan>;
 
-    fn add(self, other: &ChemicalComposition<'a>) -> Self::Output {
+    fn add(self, other: &ChemicalComposition<'lifespan>) -> Self::Output {
         let mut inst = self.clone();
         inst._add_from(other);
         return inst;
     }
 }
 
-impl<'a> Sub<&ChemicalComposition<'a>> for &ChemicalComposition<'a> {
-    type Output = ChemicalComposition<'a>;
+impl<'lifespan> Sub<&'lifespan ChemicalComposition<'_>> for &ChemicalComposition<'lifespan> {
+    type Output = ChemicalComposition<'lifespan>;
 
-    fn sub(self, other: &ChemicalComposition<'a>) -> Self::Output {
+    fn sub(self, other: &'lifespan ChemicalComposition<'_>) -> Self::Output {
         let mut inst = self.clone();
         inst._sub_from(other);
         return inst;
     }
 }
 
-impl<'a> Mul<i32> for &ChemicalComposition<'a> {
-    type Output = ChemicalComposition<'a>;
+impl<'lifespan> Mul<i32> for &ChemicalComposition<'lifespan> {
+    type Output = ChemicalComposition<'lifespan>;
 
     fn mul(self, other: i32) -> Self::Output {
         let mut inst = self.clone();
@@ -254,26 +251,26 @@ impl<'a> Mul<i32> for &ChemicalComposition<'a> {
     }
 }
 
-impl<'a> AddAssign<&ChemicalComposition<'a>> for ChemicalComposition<'a> {
-    fn add_assign(&mut self, other: &ChemicalComposition<'a>) {
+impl<'lifespan> AddAssign<&ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+    fn add_assign(&mut self, other: &ChemicalComposition<'lifespan>) {
         self._add_from(other);
     }
 }
 
-impl<'a> SubAssign<&ChemicalComposition<'a>> for ChemicalComposition<'a> {
-    fn sub_assign(&mut self, other: &ChemicalComposition<'a>) {
+impl<'lifespan> SubAssign<&'_ ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+    fn sub_assign(&mut self, other: &'_ ChemicalComposition<'lifespan>) {
         self._sub_from(other);
     }
 }
 
-impl<'a> MulAssign<i32> for ChemicalComposition<'a> {
+impl<'lifespan> MulAssign<i32> for ChemicalComposition<'_> {
     fn mul_assign(&mut self, other: i32) {
         self._mul_by(other);
     }
 }
 
-impl<'a> FromIterator<(ElementSpecification<'a>, i32)> for ChemicalComposition<'a> {
-    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (ElementSpecification<'a>, i32)> {
+impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)> for ChemicalComposition<'lifespan> {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (ElementSpecification<'lifespan>, i32)> {
         let mut composition = ChemicalComposition::new();
         for (k, v) in iter {
             composition.inc(k, v);
@@ -282,13 +279,28 @@ impl<'a> FromIterator<(ElementSpecification<'a>, i32)> for ChemicalComposition<'
     }
 }
 
-impl<'a> FromIterator<(&'a str, i32)> for ChemicalComposition<'a> {
-    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (&'a str, i32)> {
+impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalComposition<'lifespan> {
+    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (&'lifespan str, i32)> {
         let mut composition = ChemicalComposition::new();
         for (k, v) in iter {
             let elt_spec = ElementSpecification::parse(k).unwrap();
             composition.inc(elt_spec, v);
         }
+        return composition;
+    }
+}
+
+
+impl<'lifespan> convert::From<Vec<(&'lifespan str, i32)>> for ChemicalComposition<'lifespan> {
+    fn from(elements: Vec<(&'lifespan str, i32)>) -> Self {
+        let composition: ChemicalComposition<'lifespan> = elements.iter().cloned().collect();
+        return composition;
+    }
+}
+
+impl<'lifespan> convert::From<Vec<(ElementSpecification<'lifespan>, i32)>> for ChemicalComposition<'lifespan> {
+    fn from(elements: Vec<(ElementSpecification<'lifespan>, i32)>) -> Self {
+        let composition: ChemicalComposition<'lifespan> = elements.iter().cloned().collect();
         return composition;
     }
 }
