@@ -199,6 +199,10 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
             *(self.composition).entry(key).or_insert(0) *= scaler;
         }
     }
+
+    pub fn len(&self) -> usize {
+        self.composition.len()
+    }
 }
 
 impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {

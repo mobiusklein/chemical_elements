@@ -51,6 +51,9 @@ fn prepare_element(buffer: &mut Cursor<Vec<u8>>, symbol: &String, isotopes: &Val
             neutrons: isonum,
             ..Default::default()
         };
+        if x.abundance == 0.0 {
+            continue;
+        }
         if isonum == 0 {
             reference_entry = x;
         } else {
@@ -62,11 +65,15 @@ fn prepare_element(buffer: &mut Cursor<Vec<u8>>, symbol: &String, isotopes: &Val
     if n > 0 {
         let most_abundant_neutron_count = isos[n - 1].neutrons;
         let most_abundant_mass = isos[n - 1].mass;
+        let mut element_number = 0;
         for y in &mut isos {
             y.neutron_shift = ((y.neutrons as i32) - (most_abundant_neutron_count as i32)) as i8;
+            if y.neutron_shift == 0 {
+                element_number = y.neutrons;
+            }
         }
-        writeln!(buffer, "\n\tlet mut elt = Element {{ symbol: String::from(\"{}\"), most_abundant_isotope: {}, most_abundant_mass: {:.6}, ..Default::default() }};",
-                 symbol, most_abundant_neutron_count, most_abundant_mass).unwrap();
+        writeln!(buffer, "\n\tlet mut elt = Element {{ symbol: String::from(\"{}\"), most_abundant_isotope: {}, most_abundant_mass: {:.6}, element_number: {},..Default::default() }};",
+                 symbol, most_abundant_neutron_count, most_abundant_mass, element_number).unwrap();
         for y in &isos {
             writeln!(buffer, "\telt.isotopes.insert({}, Isotope {{ mass: {:.6}, abundance: {:.6}, neutrons: {}, neutron_shift: {} }});",
                         y.neutrons, y.mass, y.abundance, y.neutrons, y.neutron_shift).unwrap();
@@ -78,7 +85,7 @@ fn prepare_element(buffer: &mut Cursor<Vec<u8>>, symbol: &String, isotopes: &Val
                     reference_entry.neutrons, reference_entry.mass, reference_entry.abundance, reference_entry.neutrons,
                     reference_entry.neutron_shift).unwrap();
     }
-    writeln!(buffer, "\ttable.add(elt);\n").unwrap();
+    writeln!(buffer, "\telt.index_isotopes();\n\ttable.add(elt);\n").unwrap();
 }
 
 fn main() {

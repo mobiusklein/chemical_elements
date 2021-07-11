@@ -1,5 +1,7 @@
 use std::convert::TryFrom;
-use chemical_elements::{ElementSpecification, ChemicalComposition};
+use chemical_elements::{ElementSpecification, ChemicalComposition, PROTON};
+use chemical_elements::isotopic_pattern::{isotopic_variants};
+
 
 fn main() {
     let spec = ElementSpecification::try_from("C[13]").unwrap();
@@ -12,12 +14,9 @@ fn main() {
 
     println!("Composition: {}, Mass: {}", comp.to_string(), comp.mass());
     println!("Composition: {}, Mass: {}", ((&comp) * 2).to_string(), (&comp * 2).mass());
-    let c1 = (&comp) + (&comp);
-
-    for (k, _v) in c1.iter() {
-        println!("{} => {}", k.element, k.element as *const _ as usize);
-    }
-    for (k, _v) in comp.iter() {
-        println!("{} => {}", k.element, k.element as *const _ as usize);
+    let _c1 = (&comp) + (&comp);
+    let peaks = isotopic_variants(&comp, 6, 0, PROTON);
+    for peak in peaks.iter() {
+        println!("Peak: {}, {}, {}", peak.mz, peak.intensity, peak.charge);
     }
 }

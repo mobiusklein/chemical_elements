@@ -59,6 +59,9 @@ pub struct Element {
     pub isotopes: HashMap<u16, Isotope>,
     pub most_abundant_isotope: u16,
     pub most_abundant_mass: f64,
+    pub min_neutron_shift: i8,
+    pub max_neutron_shift: i8,
+    pub element_number: u8
 }
 
 impl Element {
@@ -66,19 +69,33 @@ impl Element {
         return self.isotopes[&self.most_abundant_isotope].mass;
     }
 
-    pub fn min_neutron_shift(&self) -> i8 {
+    pub fn calc_min_neutron_shift(&self) -> i8 {
+        if self.min_neutron_shift != 0 {
+            return self.min_neutron_shift;
+        }
         match self.isotopes.values().map(|iso| iso.neutron_shift).min() {
             Some(i) => i,
             None => 0,
         }
     }
 
-    pub fn max_neutron_shift(&self) -> i8 {
+    pub fn calc_max_neutron_shift(&self) -> i8 {
+        if self.max_neutron_shift != 0 {
+            return self.max_neutron_shift;
+        }
         match self.isotopes.values().map(|iso| iso.neutron_shift).max() {
             Some(i) => i,
             None => 0,
         }
     }
+
+    pub fn index_isotopes(&mut self) {
+        self.max_neutron_shift = 0;
+        self.min_neutron_shift = 0;
+        self.max_neutron_shift = self.calc_max_neutron_shift();
+        self.min_neutron_shift = self.calc_min_neutron_shift();
+    }
+
 }
 
 impl fmt::Display for Element {
