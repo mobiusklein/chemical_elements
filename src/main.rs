@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
-use chemical_elements::{ElementSpecification, ChemicalComposition, PROTON};
-use chemical_elements::isotopic_pattern::{isotopic_variants};
+use chemical_elements::{ElementSpecification, ChemicalComposition};
 
 
 fn main() {
@@ -15,8 +14,7 @@ fn main() {
     println!("Composition: {}, Mass: {}", comp.to_string(), comp.mass());
     println!("Composition: {}, Mass: {}", ((&comp) * 2).to_string(), (&comp * 2).mass());
     let _c1 = (&comp) + (&comp);
-    let peaks = isotopic_variants(&comp, 6, 0, PROTON);
-    for peak in peaks.iter() {
-        println!("Peak: {}, {}, {}", peak.mz, peak.intensity, peak.charge);
-    }
+
+    println!("formula no groups {}", ChemicalComposition::parse("C6H12O6").expect("Parse without groups").to_string());
+    println!("formula one group {}", ChemicalComposition::parse("C6(H12)O6").expect("Parse without groups").to_string());
 }

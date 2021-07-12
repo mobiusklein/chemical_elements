@@ -243,7 +243,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
                         state = FormulaParserState::Element;
                     } else if c == '(' {
                         paren_stack += 1;
-                        group_start = i;
+                        group_start = i + 1;
                         state = FormulaParserState::Group;
                     } else {
                         return Err("Invalid start of formula");
@@ -294,7 +294,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
                         element_start = 0;
                         element_end = 0;
                         paren_stack += 1;
-                        group_start = i;
+                        group_start = i + 1;
                         state = FormulaParserState::Group;
 
                     }
@@ -338,7 +338,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
                         count_end = 0;
                         if c == '(' {
                             paren_stack = 1;
-                            group_start = i;
+                            group_start = i + 1;
                             state = FormulaParserState::Group;
                         } else if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
                             element_start = i;
@@ -371,7 +371,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
 
                         if c == '(' {
                             paren_stack += 1;
-                            group_start = i;
+                            group_start = i + 1;
                             state = FormulaParserState::Group;
                         } else if c.is_ascii_uppercase() {
                             element_start = i;
@@ -383,7 +383,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
                 },
                 FormulaParserState::GroupToGroupCount => {
                     if !c.is_numeric() {
-                        let group = match ChemicalComposition::parse(&string[group_end..group_end]) {
+                        let group = match ChemicalComposition::parse(&string[group_start..group_end]) {
                             Ok(grp) => {grp},
                             Err(err) => {return Err(err)}
                         };
@@ -392,7 +392,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
                         acc += &group;
                         if c == '(' {
                             paren_stack = 1;
-                            group_start = i;
+                            group_start = i + 1;
                             state = FormulaParserState::Group;
                         } else if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
                             element_start = i;
@@ -408,7 +408,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
                 FormulaParserState::GroupCount => {
                     if !c.is_numeric() {
                         group_count_end = i;
-                        let group = match ChemicalComposition::parse(&string[group_end..group_end]) {
+                        let group = match ChemicalComposition::parse(&string[group_start..group_end]) {
                             Ok(grp) => {grp},
                             Err(err) => {return Err(err)}
                         };
@@ -424,7 +424,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
                         group_count_end = 0;
                         if c == '(' {
                             paren_stack = 1;
-                            group_start = i;
+                            group_start = i + 1;
                             state = FormulaParserState::Group;
                         } else if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
                             element_start = i;
@@ -473,7 +473,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
                 acc.inc(elt_spec, count);
             },
             FormulaParserState::GroupToGroupCount => {
-                let group = match ChemicalComposition::parse(&string[group_end..group_end]) {
+                let group = match ChemicalComposition::parse(&string[group_start..group_end]) {
                     Ok(grp) => {grp},
                     Err(err) => {return Err(err)}
                 };
@@ -481,7 +481,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
             }
             FormulaParserState::GroupCount => {
                 group_count_end = i;
-                let group = match ChemicalComposition::parse(&string[group_end..group_end]) {
+                let group = match ChemicalComposition::parse(&string[group_start..group_end]) {
                     Ok(grp) => {grp},
                     Err(err) => {return Err(err)}
                 };
@@ -493,7 +493,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
                     Err(msg) => {return Err("Failed to parse integer from element count");}
                 };
                 acc += &(&group * group_count);
-            }
+            },
             _ => {
                 return Err("Incomplete formula")
             }
@@ -621,7 +621,8 @@ mod test_chemical_composition {
         assert_eq!(case, ctrl);
         let case = ChemicalComposition::parse("H2O1").expect("Failed to parse");
         assert_eq!(case, ctrl);
-        // Need to fix group parser
+        let case = ChemicalComposition::parse("(H)2O1").expect("Failed to parse");
+        assert_eq!(case, ctrl);
     }
 
     #[test]

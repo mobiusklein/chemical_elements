@@ -343,6 +343,7 @@ impl<'a> IsotopicDistribution<'a> {
                 }
             };
         }
+        self.constants.update();
     }
 
     fn populate_constants(&mut self) {
@@ -546,5 +547,35 @@ impl<'a> BafflingRecursiveIsotopicPatternGenerator<'a> {
         let peaks = dist.isotopic_variants(charge, charge_carrier);
         self.parameter_cache.receive_from(&mut dist.constants);
         return peaks;
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::PROTON;
+
+    #[test]
+    fn test_baffling() {
+        let comp = ChemicalComposition::parse("C6H12O6").unwrap();
+        let peaks = isotopic_variants(&comp, 5, 0, PROTON);
+        assert_eq!(peaks.len(), 5);
+        assert!((peaks[0].mz - 180.06339).abs() < 1e-6);
+        assert!((peaks[0].intensity - 0.9226372340115745).abs() < 1e-6)
+    }
+
+    #[test]
+    fn test_baffling_generator() {
+        let comp = ChemicalComposition::parse("C6H12O6").unwrap();
+        let mut generator = BafflingRecursiveIsotopicPatternGenerator::new();
+        let peaks = generator.isotopic_variants(&comp, 5, 0, PROTON);
+        assert_eq!(peaks.len(), 5);
+        assert!((peaks[0].mz - 180.06339).abs() < 1e-6);
+        assert!((peaks[0].intensity - 0.9226372340115745).abs() < 1e-6);
+        let peaks = generator.isotopic_variants(&comp, 5, 0, PROTON);
+        assert_eq!(peaks.len(), 5);
+        assert!((peaks[0].mz - 180.06339).abs() < 1e-6);
+        assert!((peaks[0].intensity - 0.9226372340115745).abs() < 1e-6);
     }
 }
