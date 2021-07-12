@@ -1,5 +1,4 @@
 use std::cmp;
-use std::ops;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry;
 
@@ -30,11 +29,6 @@ pub fn vietes(coefficients: &DVec) -> DVec {
 }
 
 impl PolynomialParameters {
-    pub fn new(elementary_symmetric_polynomial: DVec, power_sum: DVec) -> PolynomialParameters {
-        PolynomialParameters {
-            elementary_symmetric_polynomial, power_sum
-        }
-    }
 
     pub fn update_power_sum(&mut self) {
         let begin = self.power_sum.len();
