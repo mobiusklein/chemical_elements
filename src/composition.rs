@@ -17,6 +17,11 @@ pub enum ElementSpecificationParsingError {
 }
 
 #[derive(Debug, Clone)]
+/// A hashable key referencing an element with a specific isotope
+/// state. `element` is the [`Element`](crate::Element) represented, and `isotope` is
+/// the isotope number, though 0 means monoisotopic.
+///
+/// Meant to be used as the keys for [`ChemicalComposition`]
 pub struct ElementSpecification<'element> {
     pub element: &'element Element,
     pub isotope: u16,
@@ -126,8 +131,9 @@ impl<'a> FromStr for ElementSpecification<'a> {
     }
 }
 
-/// Represents a collection of element-count pairs.
 #[derive(Debug, Clone, Default)]
+/// Represents a collection of element-count pairs as found in a flat
+/// chemical formula. Built atop [`std::collections::HashMap`]
 pub struct ChemicalComposition<'a> {
     pub composition: HashMap<ElementSpecification<'a>, i32>,
     pub mass_cache: Option<f64>,
@@ -355,6 +361,14 @@ impl<'lifespan> convert::From<Vec<(ElementSpecification<'lifespan>, i32)>>
     fn from(elements: Vec<(ElementSpecification<'lifespan>, i32)>) -> Self {
         let composition: ChemicalComposition<'lifespan> = elements.iter().cloned().collect();
         return composition;
+    }
+}
+
+impl<'a> convert::TryFrom<&'a str> for ChemicalComposition<'a> {
+    type Error = FormulaParserError;
+
+    fn try_from(string: &'a str) -> Result<Self, Self::Error> {
+        ChemicalComposition::parse(string)
     }
 }
 

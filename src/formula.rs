@@ -127,38 +127,38 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
                 }
                 FormulaParserState::Element => {
                     if c.is_ascii_alphabetic() {
-                                if c.is_uppercase() {
-                                    self.element_end = i;
-                                    let elt = self.parse_element_from_string(string, periodic_table);
-                                    let elt_spec = ElementSpecification {
-                                        element: elt,
-                                        isotope: 0,
-                                    };
-                                    acc.inc(elt_spec, 1);
-                                    self.state = FormulaParserState::Element;
-                                    self.element_start = i;
-                                    self.element_end = 0;
-                                }
-                            } else if c.is_numeric() {
-                                self.element_end = i;
-                                self.count_start = i;
-                                self.state = FormulaParserState::Count;
-                            } else if c == '[' {
-                                self.isotope_start = i + 1;
-                                self.state = FormulaParserState::Isotope;
-                            } else if c == '(' {
-                                self.element_end = i;
-                                let elt = self.parse_element_from_string(string, periodic_table);
-                                let elt_spec = ElementSpecification {
-                                    element: elt,
-                                    isotope: 0,
-                                };
-                                acc.inc(elt_spec, 1);
+                        if c.is_uppercase() {
+                            self.element_end = i;
+                            let elt = self.parse_element_from_string(string, periodic_table);
+                            let elt_spec = ElementSpecification {
+                                element: elt,
+                                isotope: 0,
+                            };
+                            acc.inc(elt_spec, 1);
+                            self.state = FormulaParserState::Element;
+                            self.element_start = i;
+                            self.element_end = 0;
+                        }
+                    } else if c.is_numeric() {
+                        self.element_end = i;
+                        self.count_start = i;
+                        self.state = FormulaParserState::Count;
+                    } else if c == '[' {
+                        self.isotope_start = i + 1;
+                        self.state = FormulaParserState::Isotope;
+                    } else if c == '(' {
+                        self.element_end = i;
+                        let elt = self.parse_element_from_string(string, periodic_table);
+                        let elt_spec = ElementSpecification {
+                            element: elt,
+                            isotope: 0,
+                        };
+                        acc.inc(elt_spec, 1);
 
-                                self.paren_stack += 1;
-                                self.group_start = i + 1;
-                                self.state = FormulaParserState::Group;
-                            }
+                        self.paren_stack += 1;
+                        self.group_start = i + 1;
+                        self.state = FormulaParserState::Group;
+                    }
                 }
                 FormulaParserState::Isotope => {
                     if c == ']' {

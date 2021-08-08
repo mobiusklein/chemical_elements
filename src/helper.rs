@@ -1,6 +1,8 @@
-use crate::{ElementSpecification, PeriodicTable, ChemicalComposition, FormulaParserError, ElementSpecificationParsingError};
 use crate::table::{populate_periodic_table, PERIODIC_TABLE};
-
+use crate::{
+    ChemicalComposition, ElementSpecification, ElementSpecificationParsingError,
+    FormulaParserError, PeriodicTable,
+};
 
 #[allow(non_snake_case)]
 pub struct ChemicalElements<'lifespan> {
@@ -14,7 +16,6 @@ pub struct ChemicalElements<'lifespan> {
     pub NH2: ChemicalComposition<'lifespan>,
 }
 
-
 impl<'transient, 'lifespan: 'transient> ChemicalElements<'lifespan> {
     fn make_periodic_table() -> PeriodicTable {
         let mut periodic_table = PeriodicTable::new();
@@ -27,22 +28,28 @@ impl<'transient, 'lifespan: 'transient> ChemicalElements<'lifespan> {
 
         let ce = ChemicalElements {
             periodic_table,
-            C : ElementSpecification::parse_with("C", &PERIODIC_TABLE).unwrap(),
-            H : ElementSpecification::parse_with("H", &PERIODIC_TABLE).unwrap(),
-            O : ElementSpecification::parse_with("O", &PERIODIC_TABLE).unwrap(),
-            N : ElementSpecification::parse_with("N", &PERIODIC_TABLE).unwrap(),
-            S : ElementSpecification::parse_with("S", &PERIODIC_TABLE).unwrap(),
-            H2O : ChemicalComposition::parse_with("H2O", &PERIODIC_TABLE).unwrap(),
-            NH2 : ChemicalComposition::parse_with("NH2", &PERIODIC_TABLE).unwrap(),
+            C: ElementSpecification::parse_with("C", &PERIODIC_TABLE).unwrap(),
+            H: ElementSpecification::parse_with("H", &PERIODIC_TABLE).unwrap(),
+            O: ElementSpecification::parse_with("O", &PERIODIC_TABLE).unwrap(),
+            N: ElementSpecification::parse_with("N", &PERIODIC_TABLE).unwrap(),
+            S: ElementSpecification::parse_with("S", &PERIODIC_TABLE).unwrap(),
+            H2O: ChemicalComposition::parse_with("H2O", &PERIODIC_TABLE).unwrap(),
+            NH2: ChemicalComposition::parse_with("NH2", &PERIODIC_TABLE).unwrap(),
         };
         ce
     }
 
-    pub fn parse_formula(&self, string: &'transient str) -> Result<ChemicalComposition, FormulaParserError> {
+    pub fn parse_formula(
+        &self,
+        string: &'transient str,
+    ) -> Result<ChemicalComposition, FormulaParserError> {
         ChemicalComposition::parse_with(string, &self.periodic_table)
     }
 
-    pub fn parse_element(&self, string: &'transient str) -> Result<ElementSpecification, ElementSpecificationParsingError> {
+    pub fn parse_element(
+        &self,
+        string: &'transient str,
+    ) -> Result<ElementSpecification, ElementSpecificationParsingError> {
         ElementSpecification::parse_with(string, &self.periodic_table)
     }
 }
