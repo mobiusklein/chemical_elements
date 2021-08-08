@@ -1,77 +1,27 @@
 use std::collections::hash_map::{HashMap, Iter};
 use std::ops::{Index,Add, Sub, Mul, AddAssign, MulAssign, SubAssign};
 use std::iter::{FromIterator};
+use std::str::FromStr;
 use std::cmp;
 use std::fmt;
 use std::hash;
 use std::convert;
 
-use crate::element::{ Element };
-use crate::table::PERIODIC_TABLE;
+use crate::element::{ Element, PeriodicTable };
+use crate::table::{PERIODIC_TABLE};
+use crate::formula::{parse_formula, parse_formula_with_table, FormulaParserError};
+
+
+#[derive(Debug, Clone, Copy)]
+pub enum ElementSpecificationParsingError {
+    UnclosedIsotope,
+
+}
 
 #[derive(Debug, Clone)]
 pub struct ElementSpecification<'element> {
     pub element: &'element Element,
     pub isotope: u16
-}
-
-impl<'element> hash::Hash for ElementSpecification<'element> {
-    fn hash<H: hash::Hasher>(&self, state: &mut H) {
-        self.element.hash(state);
-    }
-}
-
-impl<'element> fmt::Display for ElementSpecification<'element> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(
-            f,
-            "ElementSpecification({}, {})",
-            self.element.symbol,
-            self.isotope)
-    }
-}
-
-impl<'element> ElementSpecification<'element> {
-    pub fn new(element: &'element Element, isotope: u16) -> ElementSpecification<'element> {
-        return ElementSpecification { element, isotope };
-    }
-
-    pub fn to_string(&self) -> String {
-        if self.isotope == 0 {
-            return format!("{}", self.element.symbol);
-        } else {
-            return format!("{}[{}]", self.element.symbol, self.isotope);
-        }
-    }
-
-    pub fn parse(string: &str) -> Result<ElementSpecification, String> {
-        let n = string.len();
-        let elt_start = 0;
-        let mut elt_end = n;
-        let mut iso_start = n;
-        let mut iso_end = n;
-        for (i, c) in string.chars().enumerate() {
-            if c == '[' {
-                elt_end = i;
-                if n > i {
-                    iso_start = i + 1;
-                } else {
-                    return Err(String::from("Unclosed [ in element specifier"))
-                }
-
-            } else if c == ']' {
-                iso_end = i;
-            }
-        }
-        let elt_sym = &string[elt_start..elt_end];
-        let element = &PERIODIC_TABLE[elt_sym];
-        let isotope = if iso_start != iso_end {
-            string[iso_start..iso_end].parse::<u16>().unwrap()
-        } else {
-            0
-        };
-        return Ok(ElementSpecification::new(element, isotope));
-    }
 }
 
 impl<'a> cmp::PartialEq for ElementSpecification<'a> {
@@ -89,13 +39,88 @@ impl<'a> cmp::PartialEq for ElementSpecification<'a> {
 
 impl<'a> cmp::Eq for ElementSpecification<'a> {}
 
-impl<'a> convert::TryFrom<&'a str> for ElementSpecification<'a> {
-    type Error = String;
 
-    fn try_from(string: &'a str) -> Result<Self, Self::Error> {
+impl<'element> hash::Hash for ElementSpecification<'element> {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        self.element.hash(state);
+    }
+}
+
+impl<'element> fmt::Display for ElementSpecification<'element> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "ElementSpecification({}, {})",
+            self.element.symbol,
+            self.isotope)
+    }
+}
+
+impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element> {
+    pub fn new(element: &'element Element, isotope: u16) -> ElementSpecification<'element> {
+        return ElementSpecification { element, isotope };
+    }
+
+    pub fn to_string(&self) -> String {
+        if self.isotope == 0 {
+            return format!("{}", self.element.symbol);
+        } else {
+            return format!("{}[{}]", self.element.symbol, self.isotope);
+        }
+    }
+
+    pub fn parse(string: &'transient str) -> Result<ElementSpecification<'lifespan>, ElementSpecificationParsingError> {
+        Self::parse_with(string, &PERIODIC_TABLE)
+    }
+
+    pub fn parse_with(string: &'transient str, periodic_table: &'lifespan PeriodicTable) -> Result<ElementSpecification<'lifespan>, ElementSpecificationParsingError> {
+        let n = string.len();
+        let elt_start = 0;
+        let mut elt_end = n;
+        let mut iso_start = n;
+        let mut iso_end = n;
+        for (i, c) in string.chars().enumerate() {
+            if c == '[' {
+                elt_end = i;
+                if n > i {
+                    iso_start = i + 1;
+                } else {
+                    return Err(ElementSpecificationParsingError::UnclosedIsotope)
+                }
+
+            } else if c == ']' {
+                iso_end = i;
+            }
+        }
+        let elt_sym = &string[elt_start..elt_end];
+        let element = &periodic_table[elt_sym];
+        let isotope = if iso_start != iso_end {
+            string[iso_start..iso_end].parse::<u16>().unwrap()
+        } else {
+            0
+        };
+        return Ok(ElementSpecification::new(element, isotope));
+    }
+}
+
+impl<'a> convert::TryFrom<&str> for ElementSpecification<'a> {
+    type Error = ElementSpecificationParsingError;
+
+    fn try_from(string: &str) -> Result<Self, Self::Error> {
         return match ElementSpecification::parse(string) {
             Ok(r) => Ok(r),
             Err(e) => Err(e)
+        }
+    }
+}
+
+impl<'a> FromStr for ElementSpecification<'a> {
+    type Err = ElementSpecificationParsingError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        return match ElementSpecification::parse(s) {
+            Ok(r) => Ok(r),
+            Err(err) => Err(err)
         }
     }
 }
@@ -107,17 +132,6 @@ pub struct ChemicalComposition<'a> {
     pub mass_cache: Option<f64>
 }
 
-#[derive(Debug)]
-enum FormulaParserState {
-    New,
-    Element,
-    Isotope,
-    IsotopeToCount,
-    Count,
-    Group,
-    GroupToGroupCount,
-    GroupCount
-}
 
 impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     pub fn new() -> ChemicalComposition<'lifespan> {
@@ -215,290 +229,12 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         self.composition.len()
     }
 
-    // TODO: Move to stateful parser struct
-    #[allow(unused)]
-    pub fn parse(string: &str) -> Result<ChemicalComposition, &str> {
-        let mut state = FormulaParserState::New;
-        let mut acc = ChemicalComposition::new();
+    pub fn parse(string: &str) -> Result<ChemicalComposition, FormulaParserError> {
+        parse_formula(string)
+    }
 
-        let mut element_start: usize = 0;
-        let mut element_end: usize = 0;
-        let mut isotope_start: usize = 0;
-        let mut isotope_end: usize = 0;
-        let mut count_start: usize = 0;
-        let mut count_end: usize = 0;
-        let mut paren_stack: i32 = 0;
-        let mut group_start: usize = 0;
-        let mut group_end: usize = 0;
-        let mut group_count_start: usize = 0;
-        let mut group_count_end: usize = 0;
-
-        let n = string.len();
-
-        for (i, c) in string.char_indices() {
-            match state {
-                FormulaParserState::New => {
-                    if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
-                        element_start = i;
-                        state = FormulaParserState::Element;
-                    } else if c == '(' {
-                        paren_stack += 1;
-                        group_start = i + 1;
-                        state = FormulaParserState::Group;
-                    } else {
-                        return Err("Invalid start of formula");
-                    }
-                },
-                FormulaParserState::Group => {
-                    if c == ')' {
-                        paren_stack -= 1;
-                        if paren_stack == 0 {
-                            group_end = i;
-                            state = FormulaParserState::GroupToGroupCount;
-                        }
-                    } else if c == '(' {
-                        paren_stack += 1;
-                    }
-                },
-                FormulaParserState::Element => {
-                    if c.is_ascii_alphabetic() {
-                        if c.is_uppercase() {
-                            element_end = i;
-                            let elt_sym = &string[element_start..element_end];
-                            let elt = &PERIODIC_TABLE[elt_sym];
-                            let elt_spec = ElementSpecification {
-                                element: elt,
-                                isotope: 0
-                            };
-                            acc.inc(elt_spec, 1);
-                            state = FormulaParserState::Element;
-                            element_start = i;
-                            element_end = 0;
-                        }
-                    } else if c.is_numeric() {
-                        element_end = i;
-                        count_start = i;
-                        state = FormulaParserState::Count;
-                    } else if c == '[' {
-                        isotope_start = i + 1;
-                        state = FormulaParserState::Isotope;
-                    } else if c == '(' {
-                        element_end = i;
-                        let elt_sym = &string[element_start..element_end];
-                        let elt = &PERIODIC_TABLE[elt_sym];
-                        let elt_spec = ElementSpecification {
-                            element: elt,
-                            isotope: 0
-                        };
-                        acc.inc(elt_spec, 1);
-                        element_start = 0;
-                        element_end = 0;
-                        paren_stack += 1;
-                        group_start = i + 1;
-                        state = FormulaParserState::Group;
-
-                    }
-                },
-                FormulaParserState::Isotope => {
-                    if c == ']' {
-                        isotope_end = i;
-                        state = FormulaParserState::IsotopeToCount;
-                    } else if !c.is_numeric() {
-                        return Err("Invalid non-numeric character in isotope")
-                    }
-                },
-                FormulaParserState::Count => {
-                    if !c.is_numeric() {
-                        count_end = i;
-                        let count_parse = &string[count_start..count_end].parse::<i32>();
-                        let count: i32 = match count_parse {
-                            Ok(val) => {*val},
-                            Err(msg) => {return Err("Failed to parse integer from element count");}
-                        };
-                        let isotope: u16 = if isotope_end != isotope_start {
-                            match &string[isotope_start..isotope_end].parse::<u16>() {
-                                Ok(val) => {*val},
-                                Err(msg) => {return Err("Failed to parse integer from isotope count");}
-                            }
-                        } else {
-                            0
-                        };
-                        let elt_sym = &string[element_start..element_end];
-                        let elt = &PERIODIC_TABLE[elt_sym];
-                        let elt_spec = ElementSpecification {
-                            element: elt,
-                            isotope: isotope
-                        };
-                        acc.inc(elt_spec, count);
-                        element_start = 0;
-                        element_end = 0;
-                        isotope_start = 0;
-                        isotope_end = 0;
-                        count_start = 0;
-                        count_end = 0;
-                        if c == '(' {
-                            paren_stack = 1;
-                            group_start = i + 1;
-                            state = FormulaParserState::Group;
-                        } else if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
-                            element_start = i;
-                            state = FormulaParserState::Element;
-                        } else {
-                            return Err("Invalid character found following element");
-                        }
-                    }
-                },
-                FormulaParserState::IsotopeToCount => {
-                    if c.is_numeric() {
-                        count_start = i;
-                        state = FormulaParserState::Count;
-                    } else {
-                        let elt_sym = &string[element_start..element_end];
-                        let elt = &PERIODIC_TABLE[elt_sym];
-                        let isotope: u16 = match &string[isotope_start..isotope_end].parse::<u16>() {
-                            Ok(val) => {*val},
-                            Err(msg) => {return Err("Failed to parse integer from isotope count");}
-                        };
-                        let elt_spec = ElementSpecification {
-                            element: elt,
-                            isotope: isotope
-                        };
-                        acc.inc(elt_spec, 1);
-                        element_start = 0;
-                        element_end = 0;
-                        isotope_start = 0;
-                        isotope_end = 0;
-
-                        if c == '(' {
-                            paren_stack += 1;
-                            group_start = i + 1;
-                            state = FormulaParserState::Group;
-                        } else if c.is_ascii_uppercase() {
-                            element_start = i;
-                            state = FormulaParserState::Element;
-                        } else {
-                            return Err("Invalid character following isotope");
-                        }
-                    }
-                },
-                FormulaParserState::GroupToGroupCount => {
-                    if !c.is_numeric() {
-                        let group = match ChemicalComposition::parse(&string[group_start..group_end]) {
-                            Ok(grp) => {grp},
-                            Err(err) => {return Err(err)}
-                        };
-                        group_start = 0;
-                        group_end = 0;
-                        acc += &group;
-                        if c == '(' {
-                            paren_stack = 1;
-                            group_start = i + 1;
-                            state = FormulaParserState::Group;
-                        } else if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
-                            element_start = i;
-                            state = FormulaParserState::Element;
-                        } else {
-                            return Err("Invalid character found following element");
-                        }
-                    } else {
-                        group_count_start = i;
-                        state = FormulaParserState::GroupCount;
-                    }
-                }
-                FormulaParserState::GroupCount => {
-                    if !c.is_numeric() {
-                        group_count_end = i;
-                        let group = match ChemicalComposition::parse(&string[group_start..group_end]) {
-                            Ok(grp) => {grp},
-                            Err(err) => {return Err(err)}
-                        };
-                        group_start = 0;
-                        group_end = 0;
-
-                        let group_count: i32 = match &string[group_count_start..group_count_end].parse::<i32>() {
-                            Ok(val) => {*val},
-                            Err(msg) => {return Err("Failed to parse integer from element count");}
-                        };
-                        acc += &(&group * group_count);
-                        group_count_start = 0;
-                        group_count_end = 0;
-                        if c == '(' {
-                            paren_stack = 1;
-                            group_start = i + 1;
-                            state = FormulaParserState::Group;
-                        } else if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
-                            element_start = i;
-                            state = FormulaParserState::Element;
-                        } else {
-                            return Err("Invalid character found following element");
-                        }
-                    }
-                }
-            }
-        }
-
-        let i = n;
-        match state {
-            FormulaParserState::Element => {
-                element_end = i;
-                let elt_sym = &string[element_start..element_end];
-                let elt = &PERIODIC_TABLE[elt_sym];
-                let elt_spec = ElementSpecification {
-                    element: elt,
-                    isotope: 0
-                };
-                acc.inc(elt_spec, 1);
-            },
-            FormulaParserState::Count => {
-                count_end = i;
-                let count_parse = &string[count_start..count_end].parse::<i32>();
-                let count: i32 = match count_parse {
-                    Ok(val) => {*val},
-                    Err(msg) => {return Err("Failed to parse integer from element count");}
-                };
-                let isotope: u16 = if isotope_end != isotope_start {
-                    match &string[isotope_start..isotope_end].parse::<u16>() {
-                        Ok(val) => {*val},
-                        Err(msg) => {return Err("Failed to parse integer from isotope count");}
-                    }
-                } else {
-                    0
-                };
-                let elt_sym = &string[element_start..element_end];
-                let elt = &PERIODIC_TABLE[elt_sym];
-                let elt_spec = ElementSpecification {
-                    element: elt,
-                    isotope: isotope
-                };
-                acc.inc(elt_spec, count);
-            },
-            FormulaParserState::GroupToGroupCount => {
-                let group = match ChemicalComposition::parse(&string[group_start..group_end]) {
-                    Ok(grp) => {grp},
-                    Err(err) => {return Err(err)}
-                };
-                acc += &group;
-            }
-            FormulaParserState::GroupCount => {
-                group_count_end = i;
-                let group = match ChemicalComposition::parse(&string[group_start..group_end]) {
-                    Ok(grp) => {grp},
-                    Err(err) => {return Err(err)}
-                };
-                group_start = 0;
-                group_end = 0;
-
-                let group_count: i32 = match &string[group_count_start..group_count_end].parse::<i32>() {
-                    Ok(val) => {*val},
-                    Err(msg) => {return Err("Failed to parse integer from element count");}
-                };
-                acc += &(&group * group_count);
-            },
-            _ => {
-                return Err("Incomplete formula")
-            }
-        }
-        return Ok(acc);
+    pub fn parse_with(string: &str, periodic_table: &'lifespan PeriodicTable) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
+        parse_formula_with_table(string, periodic_table)
     }
 }
 
@@ -608,7 +344,7 @@ impl<'lifespan> convert::From<Vec<(ElementSpecification<'lifespan>, i32)>> for C
 
 
 #[cfg(test)]
-mod test_chemical_composition {
+mod test {
     use super::*;
     use std::convert::{TryFrom, From};
 

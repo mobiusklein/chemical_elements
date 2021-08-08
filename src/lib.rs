@@ -3,6 +3,7 @@ mod table;
 mod composition;
 pub mod isotopic_pattern;
 mod mz;
+mod formula;
 
 pub use crate::element::{Element, Isotope, PeriodicTable};
 pub use crate::table::PERIODIC_TABLE;
