@@ -1,10 +1,11 @@
 use std::cmp;
 use std::collections::hash_map::{HashMap, Iter};
 use std::convert;
+use std::convert::TryFrom;
 use std::fmt;
 use std::hash;
 use std::iter::FromIterator;
-use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Sub, SubAssign};
+use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Sub, SubAssign, IndexMut};
 use std::str::FromStr;
 
 use crate::element::{Element, PeriodicTable};
@@ -109,7 +110,7 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
     }
 }
 
-impl<'a> convert::TryFrom<&str> for ElementSpecification<'a> {
+impl<'a> TryFrom<&str> for ElementSpecification<'a> {
     type Error = ElementSpecificationParsingError;
 
     fn try_from(string: &str) -> Result<Self, Self::Error> {
@@ -260,6 +261,39 @@ impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalComposition<
         return ent.unwrap();
     }
 }
+
+const ZERO: i32 = 0;
+
+impl<'lifespan> Index<&str> for ChemicalComposition<'lifespan> {
+    type Output = i32;
+
+    fn index(&self, key: &str) -> &Self::Output {
+        let spec = ElementSpecification::try_from(key);
+        match spec {
+            Ok(spec) => self.composition.get(&spec).unwrap(),
+            Err(_err) => &ZERO
+        }
+    }
+}
+
+impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {
+
+    fn index_mut(&mut self, key: &ElementSpecification<'lifespan>) -> &mut Self::Output {
+        let entry = self.composition.entry(key.clone());
+        entry.or_insert(0)
+    }
+}
+
+
+impl<'lifespan> IndexMut<&str> for ChemicalComposition<'lifespan> {
+
+    fn index_mut(&mut self, key: &str) -> &mut Self::Output {
+        let key = ElementSpecification::try_from(key).unwrap();
+        let entry = self.composition.entry(key);
+        entry.or_insert(0)
+    }
+}
+
 
 impl<'lifespan> PartialEq<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
     fn eq(&self, other: &ChemicalComposition<'lifespan>) -> bool {

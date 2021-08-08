@@ -1,3 +1,16 @@
+//! A library for representing chemical compositions, managing
+//! elemental formulae and generating (coarse) isotopic patterns.
+//!
+//! ## Chemical Compositions
+//! ```
+//! use chemical_elements::{ChemicalComposition, ElementSpecification};
+//!
+//! let mut composition = ChemicalComposition::parse("H2O").unwrap();
+//! composition["C"] = 6;
+//! composition["O"] = 6;
+//! composition["H"] = 12;
+//! assert!((composition.mass() - 180.06339).abs() < 1e-6)
+//! ```
 mod composition;
 mod element;
 mod formula;
