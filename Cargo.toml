@@ -11,13 +11,10 @@ src = "src/main.rs"
 
 [lib]
 name = "chemical_elements"
-src = "src/lib.rs"
 
 
 [dependencies]
 lazy_static = "1.4.0"
-serde_json = "1.0"
-
 
 [build-dependencies]
 serde_json = "1.0"

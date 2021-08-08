@@ -32,10 +32,6 @@ pub enum FormulaParserError {
     InvalidElement,
 }
 
-pub fn parse_formula(string: &str) -> Result<ChemicalComposition, FormulaParserError> {
-    parse_formula_with_table(string, &PERIODIC_TABLE)
-}
-
 #[derive(Default)]
 pub struct FormulaParser {
     pub element_start: usize,
@@ -92,6 +88,18 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
         count_parse
     }
 
+    pub fn handle_group_state(&mut self, c: char, i: usize) {
+        if c == ')' {
+            self.paren_stack -= 1;
+            if self.paren_stack == 0 {
+                self.group_end = i;
+                self.state = FormulaParserState::GroupToGroupCount;
+            }
+        } else if c == '(' {
+            self.paren_stack += 1;
+        }
+    }
+
     pub fn parse_formula_with_table(
         &mut self,
         string: &str,
@@ -115,50 +123,42 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
                     }
                 }
                 FormulaParserState::Group => {
-                    if c == ')' {
-                        self.paren_stack -= 1;
-                        if self.paren_stack == 0 {
-                            self.group_end = i;
-                            self.state = FormulaParserState::GroupToGroupCount;
-                        }
-                    } else if c == '(' {
-                        self.paren_stack += 1;
-                    }
+                    self.handle_group_state(c, i);
                 }
                 FormulaParserState::Element => {
                     if c.is_ascii_alphabetic() {
-                        if c.is_uppercase() {
-                            self.element_end = i;
-                            let elt = self.parse_element_from_string(string, periodic_table);
-                            let elt_spec = ElementSpecification {
-                                element: elt,
-                                isotope: 0,
-                            };
-                            acc.inc(elt_spec, 1);
-                            self.state = FormulaParserState::Element;
-                            self.element_start = i;
-                            self.element_end = 0;
-                        }
-                    } else if c.is_numeric() {
-                        self.element_end = i;
-                        self.count_start = i;
-                        self.state = FormulaParserState::Count;
-                    } else if c == '[' {
-                        self.isotope_start = i + 1;
-                        self.state = FormulaParserState::Isotope;
-                    } else if c == '(' {
-                        self.element_end = i;
-                        let elt = self.parse_element_from_string(string, periodic_table);
-                        let elt_spec = ElementSpecification {
-                            element: elt,
-                            isotope: 0,
-                        };
-                        acc.inc(elt_spec, 1);
+                                if c.is_uppercase() {
+                                    self.element_end = i;
+                                    let elt = self.parse_element_from_string(string, periodic_table);
+                                    let elt_spec = ElementSpecification {
+                                        element: elt,
+                                        isotope: 0,
+                                    };
+                                    acc.inc(elt_spec, 1);
+                                    self.state = FormulaParserState::Element;
+                                    self.element_start = i;
+                                    self.element_end = 0;
+                                }
+                            } else if c.is_numeric() {
+                                self.element_end = i;
+                                self.count_start = i;
+                                self.state = FormulaParserState::Count;
+                            } else if c == '[' {
+                                self.isotope_start = i + 1;
+                                self.state = FormulaParserState::Isotope;
+                            } else if c == '(' {
+                                self.element_end = i;
+                                let elt = self.parse_element_from_string(string, periodic_table);
+                                let elt_spec = ElementSpecification {
+                                    element: elt,
+                                    isotope: 0,
+                                };
+                                acc.inc(elt_spec, 1);
 
-                        self.paren_stack += 1;
-                        self.group_start = i + 1;
-                        self.state = FormulaParserState::Group;
-                    }
+                                self.paren_stack += 1;
+                                self.group_start = i + 1;
+                                self.state = FormulaParserState::Group;
+                            }
                 }
                 FormulaParserState::Isotope => {
                     if c == ']' {
@@ -197,8 +197,7 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
                         acc.inc(elt_spec, count);
                         self.isotope_start = 0;
                         self.isotope_end = 0;
-                        self.count_start = 0;
-                        self.count_end = 0;
+
                         if c == '(' {
                             self.paren_stack = 1;
                             self.group_start = i + 1;
@@ -379,6 +378,10 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
     }
 }
 
+pub fn parse_formula(string: &str) -> Result<ChemicalComposition, FormulaParserError> {
+    FormulaParser::parse(string)
+}
+
 pub fn parse_formula_with_table<'lifespan>(
     string: &str,
     periodic_table: &'lifespan PeriodicTable,
@@ -394,7 +397,7 @@ mod test {
     fn test_obj() {
         let res = FormulaParser::parse("H2O").unwrap();
         let hydrogen = ElementSpecification::parse("H").unwrap();
-        let oxygen = ElementSpecification::parse("O").unwrap();
+        let oxygen = ElementSpecification::parse_with("O", &PERIODIC_TABLE).unwrap();
         assert_eq!(res[&hydrogen], 2);
         assert_eq!(res[&oxygen], 1);
     }
