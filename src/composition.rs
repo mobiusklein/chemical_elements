@@ -1,27 +1,25 @@
-use std::collections::hash_map::{HashMap, Iter};
-use std::ops::{Index,Add, Sub, Mul, AddAssign, MulAssign, SubAssign};
-use std::iter::{FromIterator};
-use std::str::FromStr;
 use std::cmp;
+use std::collections::hash_map::{HashMap, Iter};
+use std::convert;
 use std::fmt;
 use std::hash;
-use std::convert;
+use std::iter::FromIterator;
+use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Sub, SubAssign};
+use std::str::FromStr;
 
-use crate::element::{ Element, PeriodicTable };
-use crate::table::{PERIODIC_TABLE};
+use crate::element::{Element, PeriodicTable};
 use crate::formula::{parse_formula, parse_formula_with_table, FormulaParserError};
-
+use crate::table::PERIODIC_TABLE;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ElementSpecificationParsingError {
     UnclosedIsotope,
-
 }
 
 #[derive(Debug, Clone)]
 pub struct ElementSpecification<'element> {
     pub element: &'element Element,
-    pub isotope: u16
+    pub isotope: u16,
 }
 
 impl<'a> cmp::PartialEq for ElementSpecification<'a> {
@@ -39,7 +37,6 @@ impl<'a> cmp::PartialEq for ElementSpecification<'a> {
 
 impl<'a> cmp::Eq for ElementSpecification<'a> {}
 
-
 impl<'element> hash::Hash for ElementSpecification<'element> {
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         self.element.hash(state);
@@ -51,8 +48,8 @@ impl<'element> fmt::Display for ElementSpecification<'element> {
         write!(
             f,
             "ElementSpecification({}, {})",
-            self.element.symbol,
-            self.isotope)
+            self.element.symbol, self.isotope
+        )
     }
 }
 
@@ -69,11 +66,16 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
         }
     }
 
-    pub fn parse(string: &'transient str) -> Result<ElementSpecification<'lifespan>, ElementSpecificationParsingError> {
+    pub fn parse(
+        string: &'transient str,
+    ) -> Result<ElementSpecification<'lifespan>, ElementSpecificationParsingError> {
         Self::parse_with(string, &PERIODIC_TABLE)
     }
 
-    pub fn parse_with(string: &'transient str, periodic_table: &'lifespan PeriodicTable) -> Result<ElementSpecification<'lifespan>, ElementSpecificationParsingError> {
+    pub fn parse_with(
+        string: &'transient str,
+        periodic_table: &'lifespan PeriodicTable,
+    ) -> Result<ElementSpecification<'lifespan>, ElementSpecificationParsingError> {
         let n = string.len();
         let elt_start = 0;
         let mut elt_end = n;
@@ -85,9 +87,8 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
                 if n > i {
                     iso_start = i + 1;
                 } else {
-                    return Err(ElementSpecificationParsingError::UnclosedIsotope)
+                    return Err(ElementSpecificationParsingError::UnclosedIsotope);
                 }
-
             } else if c == ']' {
                 iso_end = i;
             }
@@ -109,8 +110,8 @@ impl<'a> convert::TryFrom<&str> for ElementSpecification<'a> {
     fn try_from(string: &str) -> Result<Self, Self::Error> {
         return match ElementSpecification::parse(string) {
             Ok(r) => Ok(r),
-            Err(e) => Err(e)
-        }
+            Err(e) => Err(e),
+        };
     }
 }
 
@@ -120,8 +121,8 @@ impl<'a> FromStr for ElementSpecification<'a> {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         return match ElementSpecification::parse(s) {
             Ok(r) => Ok(r),
-            Err(err) => Err(err)
-        }
+            Err(err) => Err(err),
+        };
     }
 }
 
@@ -129,13 +130,14 @@ impl<'a> FromStr for ElementSpecification<'a> {
 #[derive(Debug, Clone, Default)]
 pub struct ChemicalComposition<'a> {
     pub composition: HashMap<ElementSpecification<'a>, i32>,
-    pub mass_cache: Option<f64>
+    pub mass_cache: Option<f64>,
 }
-
 
 impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     pub fn new() -> ChemicalComposition<'lifespan> {
-        ChemicalComposition {..Default::default()}
+        ChemicalComposition {
+            ..Default::default()
+        }
     }
 
     pub fn calc_mass(&self) -> f64 {
@@ -154,7 +156,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     pub fn mass(&self) -> f64 {
         let mass = match self.mass_cache {
             None => self.calc_mass(),
-            Some(val) => val
+            Some(val) => val,
         };
         return mass;
     }
@@ -165,8 +167,8 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
                 let total = self.mass();
                 self.mass_cache = Some(total);
                 total
-            },
-            Some(val) => val
+            }
+            Some(val) => val,
         };
         return mass;
     }
@@ -174,7 +176,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     pub fn get(&self, elt_spec: &ElementSpecification<'lifespan>) -> i32 {
         return match self.composition.get(elt_spec) {
             Some(i) => *i,
-            None => 0
+            None => 0,
         };
     }
 
@@ -197,11 +199,13 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         parts.sort_by_key(|elt_cnt| match elt_cnt.0.element.symbol.as_str() {
             "C" => 5001,
             "H" => 5000,
-            _ => elt_cnt.0.element.most_abundant_mass as i64
+            _ => elt_cnt.0.element.most_abundant_mass as i64,
         });
         parts.reverse();
-        let tokens: Vec<String> = parts.iter().map(
-            |elt_cnt| elt_cnt.0.to_string() + &(*(elt_cnt.1)).to_string()).collect();
+        let tokens: Vec<String> = parts
+            .iter()
+            .map(|elt_cnt| elt_cnt.0.to_string() + &(*(elt_cnt.1)).to_string())
+            .collect();
         return tokens.join("");
     }
 
@@ -219,7 +223,8 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     }
 
     fn _mul_by(&mut self, scaler: i32) {
-        let keys: Vec<ElementSpecification> = (&mut self.composition).keys().map(|e|e.clone()).collect();
+        let keys: Vec<ElementSpecification> =
+            (&mut self.composition).keys().map(|e| e.clone()).collect();
         for key in keys {
             *(self.composition).entry(key).or_insert(0) *= scaler;
         }
@@ -233,7 +238,10 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         parse_formula(string)
     }
 
-    pub fn parse_with(string: &str, periodic_table: &'lifespan PeriodicTable) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
+    pub fn parse_with(
+        string: &str,
+        periodic_table: &'lifespan PeriodicTable,
+    ) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
         parse_formula_with_table(string, periodic_table)
     }
 }
@@ -241,7 +249,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
 impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {
     type Output = i32;
 
-    fn index(&self, key: & ElementSpecification<'lifespan>) -> &Self::Output {
+    fn index(&self, key: &ElementSpecification<'lifespan>) -> &Self::Output {
         let ent = self.composition.get(key);
         return ent.unwrap();
     }
@@ -256,7 +264,6 @@ impl<'lifespan> PartialEq<ChemicalComposition<'lifespan>> for ChemicalCompositio
         !(self.composition == other.composition)
     }
 }
-
 
 impl<'lifespan> Add<&ChemicalComposition<'lifespan>> for &ChemicalComposition<'lifespan> {
     type Output = ChemicalComposition<'lifespan>;
@@ -306,8 +313,13 @@ impl<'lifespan> MulAssign<i32> for ChemicalComposition<'_> {
     }
 }
 
-impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)> for ChemicalComposition<'lifespan> {
-    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (ElementSpecification<'lifespan>, i32)> {
+impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)>
+    for ChemicalComposition<'lifespan>
+{
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = (ElementSpecification<'lifespan>, i32)>,
+    {
         let mut composition = ChemicalComposition::new();
         for (k, v) in iter {
             composition.inc(k, v);
@@ -317,7 +329,10 @@ impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)> for Chemica
 }
 
 impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalComposition<'lifespan> {
-    fn from_iter<T>(iter: T) -> Self where T: IntoIterator<Item = (&'lifespan str, i32)> {
+    fn from_iter<T>(iter: T) -> Self
+    where
+        T: IntoIterator<Item = (&'lifespan str, i32)>,
+    {
         let mut composition = ChemicalComposition::new();
         for (k, v) in iter {
             let elt_spec = ElementSpecification::parse(k).unwrap();
@@ -327,7 +342,6 @@ impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalComposition<'lif
     }
 }
 
-
 impl<'lifespan> convert::From<Vec<(&'lifespan str, i32)>> for ChemicalComposition<'lifespan> {
     fn from(elements: Vec<(&'lifespan str, i32)>) -> Self {
         let composition: ChemicalComposition<'lifespan> = elements.iter().cloned().collect();
@@ -335,18 +349,19 @@ impl<'lifespan> convert::From<Vec<(&'lifespan str, i32)>> for ChemicalCompositio
     }
 }
 
-impl<'lifespan> convert::From<Vec<(ElementSpecification<'lifespan>, i32)>> for ChemicalComposition<'lifespan> {
+impl<'lifespan> convert::From<Vec<(ElementSpecification<'lifespan>, i32)>>
+    for ChemicalComposition<'lifespan>
+{
     fn from(elements: Vec<(ElementSpecification<'lifespan>, i32)>) -> Self {
         let composition: ChemicalComposition<'lifespan> = elements.iter().cloned().collect();
         return composition;
     }
 }
 
-
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::convert::{TryFrom, From};
+    use std::convert::{From, TryFrom};
 
     #[test]
     fn test_parse() {

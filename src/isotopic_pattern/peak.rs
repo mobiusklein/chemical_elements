@@ -1,6 +1,6 @@
-use std::ops;
 use std::cmp;
 use std::fmt;
+use std::ops;
 
 #[derive(Debug, Clone, Default)]
 pub struct Peak {
@@ -19,8 +19,7 @@ impl cmp::PartialEq<Peak> for Peak {
     fn eq(&self, other: &Peak) -> bool {
         if (self.mz - other.mz).abs() > 1e-3 {
             return false;
-        }
-        else if (self.intensity - other.intensity).abs() > 1e-3 {
+        } else if (self.intensity - other.intensity).abs() > 1e-3 {
             return false;
         }
         return true;
@@ -35,7 +34,6 @@ impl cmp::PartialOrd<Peak> for Peak {
 
 pub type PeakList = Vec<Peak>;
 
-
 #[derive(Debug, Clone)]
 pub struct TheoreticalIsotopicPattern {
     pub peaks: PeakList,
@@ -44,9 +42,7 @@ pub struct TheoreticalIsotopicPattern {
 
 impl TheoreticalIsotopicPattern {
     pub fn new(peaks: PeakList, origin: f64) -> TheoreticalIsotopicPattern {
-        TheoreticalIsotopicPattern {
-            peaks, origin
-        }
+        TheoreticalIsotopicPattern { peaks, origin }
     }
 
     pub fn len(&self) -> usize {
@@ -64,7 +60,8 @@ impl TheoreticalIsotopicPattern {
         }
 
         let mut result = TheoreticalIsotopicPattern {
-            peaks, origin: self.origin
+            peaks,
+            origin: self.origin,
         };
         result.normalize();
         result
@@ -89,7 +86,7 @@ impl TheoreticalIsotopicPattern {
         for p in self.peaks.iter_mut() {
             p.intensity *= factor;
         }
-        return self
+        return self;
     }
 
     pub fn normalize(&mut self) -> &TheoreticalIsotopicPattern {
@@ -134,7 +131,7 @@ impl fmt::Display for TheoreticalIsotopicPattern {
             }
         }
         write!(f, "])").expect("Write failed");
-        return Ok(())
+        return Ok(());
     }
 }
 
@@ -165,14 +162,14 @@ impl From<PeakList> for TheoreticalIsotopicPattern {
 // Iterators
 
 pub struct TheoreticalIsotopicPatternIter<'a> {
-    iter: std::slice::Iter<'a, Peak>
+    iter: std::slice::Iter<'a, Peak>,
 }
 
 impl<'a> TheoreticalIsotopicPatternIter<'a> {
     fn new(peaks: &'a TheoreticalIsotopicPattern) -> TheoreticalIsotopicPatternIter<'a> {
         return TheoreticalIsotopicPatternIter {
-            iter: peaks.peaks.iter()
-        }
+            iter: peaks.peaks.iter(),
+        };
     }
 }
 
@@ -180,6 +177,6 @@ impl<'a> Iterator for TheoreticalIsotopicPatternIter<'a> {
     type Item = &'a Peak;
 
     fn next(&mut self) -> Option<Self::Item> {
-        return self.iter.next()
+        return self.iter.next();
     }
 }

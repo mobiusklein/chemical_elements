@@ -1,14 +1,12 @@
 use std::cmp;
-use std::collections::HashMap;
 use std::collections::hash_map::Entry;
+use std::collections::HashMap;
 
-use crate::{ChemicalComposition, ElementSpecification, mass_charge_ratio};
-use crate::element::{Element,};
+use crate::element::Element;
 use crate::isotopic_pattern::{Peak, PeakList};
-
+use crate::{mass_charge_ratio, ChemicalComposition, ElementSpecification};
 
 pub type DVec = Vec<f64>;
-
 
 #[derive(Debug, Clone)]
 pub struct PolynomialParameters {
@@ -21,7 +19,7 @@ pub fn vietes(coefficients: &DVec) -> DVec {
     let mut esp = DVec::with_capacity(n);
     let tail = coefficients[n - 1];
     for i in 0..n {
-        let sign = if i % 2 == 0 {1.0} else {-1.0};
+        let sign = if i % 2 == 0 { 1.0 } else { -1.0 };
         let el = sign * coefficients[n - i - 1] / tail;
         esp.push(el);
     }
@@ -29,7 +27,6 @@ pub fn vietes(coefficients: &DVec) -> DVec {
 }
 
 impl PolynomialParameters {
-
     pub fn update_power_sum(&mut self) {
         let begin = self.power_sum.len();
         let end = self.elementary_symmetric_polynomial.len();
@@ -58,14 +55,12 @@ impl PolynomialParameters {
         for k in begin..end {
             if k == 0 {
                 self.elementary_symmetric_polynomial.push(1.0);
-            }
-            else if k > (order as usize) {
+            } else if k > (order as usize) {
                 self.elementary_symmetric_polynomial.push(0.0);
-            }
-            else {
+            } else {
                 let mut el = 0.0;
                 for j in 1..k + 1 {
-                    let sign = if (j % 2) == 1 {1.0} else {-1.0};
+                    let sign = if (j % 2) == 1 { 1.0 } else { -1.0 };
                     el += sign * self.power_sum[j] * self.elementary_symmetric_polynomial[k - j];
                 }
                 el /= k as f64;
@@ -95,11 +90,7 @@ impl PolynomialParameters {
             let k = (n - i - 1 + monoisotopic_number) as u16;
             let isotope = element.isotopes.get(&k).unwrap();
             let current_order = (max_isotope_number - isotope.neutron_shift) as usize;
-            let coef = if with_mass {
-                isotope.mass
-            } else {
-                1.0
-            };
+            let coef = if with_mass { isotope.mass } else { 1.0 };
             if current_order > accumulator.len() {
                 for _j in accumulator.len()..(current_order) {
                     accumulator.push(0.0);
@@ -111,10 +102,13 @@ impl PolynomialParameters {
                 panic!("Error! Unordered isotopes for {}", element.symbol);
             }
         }
-
     }
 
-    pub fn from_element(element: &Element, with_mass: bool, accumulator: &mut DVec) -> PolynomialParameters {
+    pub fn from_element(
+        element: &Element,
+        with_mass: bool,
+        accumulator: &mut DVec,
+    ) -> PolynomialParameters {
         let n = element.max_neutron_shift;
         accumulator.reserve(n as usize);
         PolynomialParameters::isotopic_coefficients(element, with_mass, accumulator);
@@ -123,7 +117,8 @@ impl PolynomialParameters {
         let power_sum = DVec::with_capacity(elementary_symmetric_polynomial.len() + 4);
         let order = accumulator.len() - 1;
         let mut result = PolynomialParameters {
-            elementary_symmetric_polynomial, power_sum
+            elementary_symmetric_polynomial,
+            power_sum,
         };
         result.newton_optimization(order as i32);
         return result;
@@ -135,36 +130,37 @@ pub struct PhiConstants<'a> {
     pub order: i32,
     pub element: &'a Element,
     pub element_coefficients: PolynomialParameters,
-    pub mass_coefficients: PolynomialParameters
+    pub mass_coefficients: PolynomialParameters,
 }
-
 
 impl<'a> PhiConstants<'a> {
     pub fn from_element(element: &Element) -> PhiConstants {
         let mut accumulator = DVec::new();
         let order = element.max_neutron_shift as i32;
-        let element_coefficients = PolynomialParameters::from_element(element, false, &mut accumulator);
+        let element_coefficients =
+            PolynomialParameters::from_element(element, false, &mut accumulator);
         accumulator.clear();
         let mass_coefficients = PolynomialParameters::from_element(element, true, &mut accumulator);
         return PhiConstants {
-            element, order, element_coefficients, mass_coefficients
-        }
+            element,
+            order,
+            element_coefficients,
+            mass_coefficients,
+        };
     }
 }
-
 
 #[derive(Debug)]
 pub struct IsotopicConstants<'a> {
     pub constants: HashMap<&'a str, PhiConstants<'a>>,
-    pub order: i32
+    pub order: i32,
 }
-
 
 impl<'a> IsotopicConstants<'a> {
     pub fn new(size: usize) -> IsotopicConstants<'a> {
         IsotopicConstants {
             constants: HashMap::with_capacity(size),
-            order: 0
+            order: 0,
         }
     }
 
@@ -178,7 +174,7 @@ impl<'a> IsotopicConstants<'a> {
 
     pub fn add(&mut self, element: &'a Element) {
         match self.get(element.symbol.as_ref()) {
-            Some(_c) => {return},
+            Some(_c) => return,
             None => {}
         };
 
@@ -192,38 +188,53 @@ impl<'a> IsotopicConstants<'a> {
                 continue;
             }
             for _j in elt_params.order..self.order + 1 {
-                elt_params.element_coefficients.elementary_symmetric_polynomial.push(0.0);
-                elt_params.mass_coefficients.elementary_symmetric_polynomial.push(0.0);
+                elt_params
+                    .element_coefficients
+                    .elementary_symmetric_polynomial
+                    .push(0.0);
+                elt_params
+                    .mass_coefficients
+                    .elementary_symmetric_polynomial
+                    .push(0.0);
             }
 
-            elt_params.order = elt_params.element_coefficients.elementary_symmetric_polynomial.len() as i32;
-            elt_params.element_coefficients.newton_optimization(elt_params.order);
-            elt_params.mass_coefficients.newton_optimization(elt_params.order);
+            elt_params.order = elt_params
+                .element_coefficients
+                .elementary_symmetric_polynomial
+                .len() as i32;
+            elt_params
+                .element_coefficients
+                .newton_optimization(elt_params.order);
+            elt_params
+                .mass_coefficients
+                .newton_optimization(elt_params.order);
         }
     }
 
     pub fn nth_element_power_sum(&self, symbol: &str, order: usize) -> f64 {
-        let phi = self.get(symbol).expect(format!("Expected element {} in constants", symbol).as_ref());
+        let phi = self
+            .get(symbol)
+            .expect(format!("Expected element {} in constants", symbol).as_ref());
         phi.element_coefficients.power_sum[order]
     }
 
     pub fn nth_element_power_sum_mass(&self, symbol: &str, order: usize) -> f64 {
-        let phi = self.get(symbol).expect(format!("Expected element {} in constants", symbol).as_ref());
+        let phi = self
+            .get(symbol)
+            .expect(format!("Expected element {} in constants", symbol).as_ref());
         phi.mass_coefficients.power_sum[order]
     }
 }
 
-
 pub struct IsotopicConstantsCache<'a> {
-    pub cache: HashMap<&'a str, PhiConstants<'a>>
+    pub cache: HashMap<&'a str, PhiConstants<'a>>,
 }
-
 
 impl<'a> IsotopicConstantsCache<'a> {
     pub fn new() -> IsotopicConstantsCache<'a> {
         return IsotopicConstantsCache {
-            cache: HashMap::with_capacity(6)
-        }
+            cache: HashMap::with_capacity(6),
+        };
     }
 
     pub fn checkout(&mut self, symbol: &'a str) -> Option<PhiConstants<'a>> {
@@ -236,7 +247,7 @@ impl<'a> IsotopicConstantsCache<'a> {
             Entry::Vacant(ent) => {
                 ent.insert(constants);
                 true
-            },
+            }
             Entry::Occupied(mut ent) => {
                 if ent.get().order > constants.order {
                     false
@@ -252,10 +263,8 @@ impl<'a> IsotopicConstantsCache<'a> {
         for (k, v) in params.constants.drain() {
             self.receive(k, v);
         }
-
     }
 }
-
 
 pub fn max_variants(composition: &ChemicalComposition) -> i32 {
     let mut acc = 0;
@@ -265,7 +274,6 @@ pub fn max_variants(composition: &ChemicalComposition) -> i32 {
     acc
 }
 
-
 pub fn guess_npeaks(composition: &ChemicalComposition, max_npeaks: i32) -> i32 {
     let total_variants = max_variants(composition);
     let npeaks = (total_variants as f64).sqrt() as i32 - 2;
@@ -273,15 +281,14 @@ pub fn guess_npeaks(composition: &ChemicalComposition, max_npeaks: i32) -> i32 {
     return result;
 }
 
-
 struct ElementPolynomialMap<'a> {
-    pub polynomials: HashMap<&'a str, DVec>
+    pub polynomials: HashMap<&'a str, DVec>,
 }
 
 impl<'a> ElementPolynomialMap<'a> {
     pub fn new(size: usize) -> ElementPolynomialMap<'a> {
         ElementPolynomialMap {
-            polynomials: HashMap::with_capacity(size)
+            polynomials: HashMap::with_capacity(size),
         }
     }
 
@@ -301,23 +308,33 @@ pub struct IsotopicDistribution<'a> {
     pub order: i32,
     pub average_mass: f64,
     pub monoisotopic_peak: Peak,
-    pub max_variants: i32
+    pub max_variants: i32,
 }
 
 impl<'a> IsotopicDistribution<'a> {
-    pub fn from_composition(composition: &'a ChemicalComposition<'a>, order: i32) -> IsotopicDistribution {
+    pub fn from_composition(
+        composition: &'a ChemicalComposition<'a>,
+        order: i32,
+    ) -> IsotopicDistribution {
         let mut inst = IsotopicDistribution::fill_from_composition(composition, order);
         inst.populate_constants();
         inst
     }
 
-    fn fill_from_composition(composition: &'a ChemicalComposition<'a>, order: i32) -> IsotopicDistribution {
+    fn fill_from_composition(
+        composition: &'a ChemicalComposition<'a>,
+        order: i32,
+    ) -> IsotopicDistribution {
         let mut inst = IsotopicDistribution {
             composition,
             order: 0,
             average_mass: 0.0,
             constants: IsotopicConstants::new(composition.len()),
-            monoisotopic_peak: Peak { mz: 0.0, intensity: 0.0, charge: 0 },
+            monoisotopic_peak: Peak {
+                mz: 0.0,
+                intensity: 0.0,
+                charge: 0,
+            },
             max_variants: max_variants(composition),
         };
         inst.update_order(order);
@@ -326,18 +343,24 @@ impl<'a> IsotopicDistribution<'a> {
     }
 
     pub fn from_composition_and_cache<'outer: 'inner, 'inner: 'transient, 'transient>(
-            composition: &'a ChemicalComposition<'outer>, order: i32, cache: &'inner mut IsotopicConstantsCache<'a>) -> IsotopicDistribution<'a> {
+        composition: &'a ChemicalComposition<'outer>,
+        order: i32,
+        cache: &'inner mut IsotopicConstantsCache<'a>,
+    ) -> IsotopicDistribution<'a> {
         let mut inst = IsotopicDistribution::fill_from_composition(composition, order);
         inst.populate_constants_from_cache(cache);
         inst
     }
 
-    fn populate_constants_from_cache<'transient>(&mut self, cache: &'transient mut IsotopicConstantsCache<'a>) {
+    fn populate_constants_from_cache<'transient>(
+        &mut self,
+        cache: &'transient mut IsotopicConstantsCache<'a>,
+    ) {
         for (elt, _cnt) in self.composition.iter() {
             match cache.checkout(elt.element.symbol.as_ref()) {
                 None => {
                     self.constants.add(elt.element);
-                },
+                }
                 Some(isoconst) => {
                     self.constants.set(elt.element.symbol.as_ref(), isoconst);
                 }
@@ -358,10 +381,16 @@ impl<'a> IsotopicDistribution<'a> {
         let mut intensity = 0.0;
         for (elt, _cnt) in self.composition.iter() {
             let element = elt.element;
-            intensity += element.isotopes[&element.most_abundant_isotope].abundance.ln();
+            intensity += element.isotopes[&element.most_abundant_isotope]
+                .abundance
+                .ln();
         }
         intensity = intensity.exp();
-        return Peak { mz, intensity: intensity, charge: 0};
+        return Peak {
+            mz,
+            intensity: intensity,
+            charge: 0,
+        };
     }
 
     pub fn update_order(&mut self, order: i32) {
@@ -378,8 +407,10 @@ impl<'a> IsotopicDistribution<'a> {
 
         for (elt, cnt) in self.composition.iter() {
             let element = elt.element;
-            phi += self.constants.nth_element_power_sum(
-                element.symbol.as_ref(), order) * (*cnt as f64);
+            phi += self
+                .constants
+                .nth_element_power_sum(element.symbol.as_ref(), order)
+                * (*cnt as f64);
         }
         return phi;
     }
@@ -392,10 +423,14 @@ impl<'a> IsotopicDistribution<'a> {
             } else {
                 *cnt
             };
-            phi += self.constants.nth_element_power_sum(
-                elt.element.symbol.as_ref(), order) * coef as f64;
+            phi += self
+                .constants
+                .nth_element_power_sum(elt.element.symbol.as_ref(), order)
+                * coef as f64;
         }
-        phi += self.constants.nth_element_power_sum_mass(element.element.symbol.as_ref(), order);
+        phi += self
+            .constants
+            .nth_element_power_sum_mass(element.element.symbol.as_ref(), order);
         return phi;
     }
 
@@ -442,11 +477,14 @@ impl<'a> IsotopicDistribution<'a> {
             let ele_sym_poly = DVec::new();
             let mut param = PolynomialParameters {
                 elementary_symmetric_polynomial: ele_sym_poly,
-                power_sum
+                power_sum,
             };
             param.newton_optimization(self.max_variants);
             power_sum = param.power_sum;
-            ep_map.set(elt.element.symbol.as_ref(), param.elementary_symmetric_polynomial);
+            ep_map.set(
+                elt.element.symbol.as_ref(),
+                param.elementary_symmetric_polynomial,
+            );
         }
         return ep_map;
     }
@@ -458,7 +496,7 @@ impl<'a> IsotopicDistribution<'a> {
         let ep_map = self.build_polynomial_map();
 
         for i in 0..(self.order + 1) as usize {
-            let sign = if i % 2 == 0 {1.0} else {-1.0};
+            let sign = if i % 2 == 0 { 1.0 } else { -1.0 };
             let mut center = 0.0;
             for (elt, cnt) in self.composition.iter() {
                 let element = elt.element;
@@ -496,7 +534,7 @@ impl<'a> IsotopicDistribution<'a> {
             let peak = Peak {
                 mz: adjusted_mz,
                 intensity: intensity_i / total,
-                charge: charge
+                charge: charge,
             };
 
             if peak.intensity < 1e-10 {
@@ -512,8 +550,12 @@ impl<'a> IsotopicDistribution<'a> {
     }
 }
 
-
-pub fn isotopic_variants<'a>(composition: &'a ChemicalComposition<'a>, npeaks: i32, charge: i32, charge_carrier: f64) -> PeakList {
+pub fn isotopic_variants<'a>(
+    composition: &'a ChemicalComposition<'a>,
+    npeaks: i32,
+    charge: i32,
+    charge_carrier: f64,
+) -> PeakList {
     let npeaks = if npeaks == 0 {
         guess_npeaks(composition, 300)
     } else {
@@ -524,32 +566,39 @@ pub fn isotopic_variants<'a>(composition: &'a ChemicalComposition<'a>, npeaks: i
     dist.isotopic_variants(charge, charge_carrier)
 }
 
-
 pub struct BafflingRecursiveIsotopicPatternGenerator<'a> {
     parameter_cache: IsotopicConstantsCache<'a>,
 }
 
-
 impl<'a> BafflingRecursiveIsotopicPatternGenerator<'a> {
     pub fn new() -> BafflingRecursiveIsotopicPatternGenerator<'a> {
         BafflingRecursiveIsotopicPatternGenerator {
-            parameter_cache: IsotopicConstantsCache::new()
+            parameter_cache: IsotopicConstantsCache::new(),
         }
     }
 
-    pub fn isotopic_variants<'outer: 'a>(&mut self, composition: &'outer ChemicalComposition<'outer>, npeaks: i32, charge: i32, charge_carrier: f64) -> PeakList {
+    pub fn isotopic_variants<'outer: 'a>(
+        &mut self,
+        composition: &'outer ChemicalComposition<'outer>,
+        npeaks: i32,
+        charge: i32,
+        charge_carrier: f64,
+    ) -> PeakList {
         let npeaks = if npeaks == 0 {
             guess_npeaks(composition, 300)
         } else {
             npeaks - 1
         };
-        let mut dist = IsotopicDistribution::from_composition_and_cache(composition, npeaks, &mut self.parameter_cache);
+        let mut dist = IsotopicDistribution::from_composition_and_cache(
+            composition,
+            npeaks,
+            &mut self.parameter_cache,
+        );
         let peaks = dist.isotopic_variants(charge, charge_carrier);
         self.parameter_cache.receive_from(&mut dist.constants);
         return peaks;
     }
 }
-
 
 #[cfg(test)]
 mod test {

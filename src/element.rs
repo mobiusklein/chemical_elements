@@ -61,7 +61,7 @@ pub struct Element {
     pub most_abundant_mass: f64,
     pub min_neutron_shift: i8,
     pub max_neutron_shift: i8,
-    pub element_number: u8
+    pub element_number: u8,
 }
 
 impl Element {
@@ -95,7 +95,6 @@ impl Element {
         self.max_neutron_shift = self.calc_max_neutron_shift();
         self.min_neutron_shift = self.calc_min_neutron_shift();
     }
-
 }
 
 impl fmt::Display for Element {

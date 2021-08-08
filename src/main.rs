@@ -1,6 +1,5 @@
+use chemical_elements::{ChemicalComposition, ElementSpecification};
 use std::convert::TryFrom;
-use chemical_elements::{ElementSpecification, ChemicalComposition};
-
 
 fn main() {
     let spec = ElementSpecification::try_from("C[13]").unwrap();
@@ -12,9 +11,23 @@ fn main() {
     comp.set(ElementSpecification::try_from("O").unwrap(), 6);
 
     println!("Composition: {}, Mass: {}", comp.to_string(), comp.mass());
-    println!("Composition: {}, Mass: {}", ((&comp) * 2).to_string(), (&comp * 2).mass());
+    println!(
+        "Composition: {}, Mass: {}",
+        ((&comp) * 2).to_string(),
+        (&comp * 2).mass()
+    );
     let _c1 = (&comp) + (&comp);
 
-    println!("formula no groups {}", ChemicalComposition::parse("C6H12O6").expect("Parse without groups").to_string());
-    println!("formula one group {}", ChemicalComposition::parse("C6(H12)O6").expect("Parse without groups").to_string());
+    println!(
+        "formula no groups {}",
+        ChemicalComposition::parse("C6H12O6")
+            .expect("Parse without groups")
+            .to_string()
+    );
+    println!(
+        "formula one group {}",
+        ChemicalComposition::parse("C6(H12)O6")
+            .expect("Parse without groups")
+            .to_string()
+    );
 }

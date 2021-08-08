@@ -1,9 +1,8 @@
-use std::num::ParseIntError;
+use crate::table::PERIODIC_TABLE;
 use crate::ChemicalComposition;
 use crate::ElementSpecification;
 use crate::{Element, PeriodicTable};
-use crate::table::PERIODIC_TABLE;
-
+use std::num::ParseIntError;
 
 #[derive(Debug)]
 pub enum FormulaParserState {
@@ -14,7 +13,7 @@ pub enum FormulaParserState {
     Count,
     Group,
     GroupToGroupCount,
-    GroupCount
+    GroupCount,
 }
 
 impl Default for FormulaParserState {
@@ -33,11 +32,9 @@ pub enum FormulaParserError {
     InvalidElement,
 }
 
-
 pub fn parse_formula(string: &str) -> Result<ChemicalComposition, FormulaParserError> {
     parse_formula_with_table(string, &PERIODIC_TABLE)
 }
-
 
 #[derive(Default)]
 pub struct FormulaParser {
@@ -55,20 +52,25 @@ pub struct FormulaParser {
     pub state: FormulaParserState,
 }
 
-
-impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
-
+impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
     pub fn parse(string: &str) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
         let mut parser = Self::default();
         parser.parse_formula_with_table(string, &PERIODIC_TABLE)
     }
 
-    pub fn parse_with_table(string: &str, periodic_table: &'lifespan PeriodicTable) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
+    pub fn parse_with_table(
+        string: &str,
+        periodic_table: &'lifespan PeriodicTable,
+    ) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
         let mut parser = Self::default();
         parser.parse_formula_with_table(string, periodic_table)
     }
 
-    pub fn parse_element_from_string(&mut self, string: &str, periodic_table: &'lifespan PeriodicTable) -> &'lifespan Element {
+    pub fn parse_element_from_string(
+        &mut self,
+        string: &str,
+        periodic_table: &'lifespan PeriodicTable,
+    ) -> &'lifespan Element {
         let elt_sym = &string[self.element_start..self.element_end];
         let elt = &periodic_table[elt_sym];
         self.element_start = 0;
@@ -90,7 +92,11 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
         count_parse
     }
 
-    pub fn parse_formula_with_table(&mut self, string: &str, periodic_table: &'lifespan PeriodicTable) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
+    pub fn parse_formula_with_table(
+        &mut self,
+        string: &str,
+        periodic_table: &'lifespan PeriodicTable,
+    ) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
         let mut acc = ChemicalComposition::new();
         let n = string.len();
 
@@ -107,7 +113,7 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
                     } else {
                         return Err(FormulaParserError::InvalidStart);
                     }
-                },
+                }
                 FormulaParserState::Group => {
                     if c == ')' {
                         self.paren_stack -= 1;
@@ -118,7 +124,7 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
                     } else if c == '(' {
                         self.paren_stack += 1;
                     }
-                },
+                }
                 FormulaParserState::Element => {
                     if c.is_ascii_alphabetic() {
                         if c.is_uppercase() {
@@ -126,7 +132,7 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
                             let elt = self.parse_element_from_string(string, periodic_table);
                             let elt_spec = ElementSpecification {
                                 element: elt,
-                                isotope: 0
+                                isotope: 0,
                             };
                             acc.inc(elt_spec, 1);
                             self.state = FormulaParserState::Element;
@@ -145,36 +151,39 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
                         let elt = self.parse_element_from_string(string, periodic_table);
                         let elt_spec = ElementSpecification {
                             element: elt,
-                            isotope: 0
+                            isotope: 0,
                         };
                         acc.inc(elt_spec, 1);
 
                         self.paren_stack += 1;
                         self.group_start = i + 1;
                         self.state = FormulaParserState::Group;
-
                     }
-                },
+                }
                 FormulaParserState::Isotope => {
                     if c == ']' {
                         self.isotope_end = i;
                         self.state = FormulaParserState::IsotopeToCount;
                     } else if !c.is_numeric() {
-                        return Err(FormulaParserError::IsotopeCountMalformed)
+                        return Err(FormulaParserError::IsotopeCountMalformed);
                     }
-                },
+                }
                 FormulaParserState::Count => {
                     if !c.is_numeric() {
                         self.count_end = i;
                         let count_parse = self.parse_element_count(string);
                         let count: i32 = match count_parse {
-                            Ok(val) => {val},
-                            Err(_msg) => {return Err(FormulaParserError::ElementCountMalformed);}
+                            Ok(val) => val,
+                            Err(_msg) => {
+                                return Err(FormulaParserError::ElementCountMalformed);
+                            }
                         };
                         let isotope: u16 = if self.isotope_end != self.isotope_start {
                             match string[self.isotope_start..self.isotope_end].parse::<u16>() {
-                                Ok(val) => {val},
-                                Err(_msg) => {return Err(FormulaParserError::IsotopeCountMalformed);}
+                                Ok(val) => val,
+                                Err(_msg) => {
+                                    return Err(FormulaParserError::IsotopeCountMalformed);
+                                }
                             }
                         } else {
                             0
@@ -183,7 +192,7 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
                         let elt = self.parse_element_from_string(string, periodic_table);
                         let elt_spec = ElementSpecification {
                             element: elt,
-                            isotope: isotope
+                            isotope: isotope,
                         };
                         acc.inc(elt_spec, count);
                         self.isotope_start = 0;
@@ -201,20 +210,23 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
                             return Err(FormulaParserError::InvalidElement);
                         }
                     }
-                },
+                }
                 FormulaParserState::IsotopeToCount => {
                     if c.is_numeric() {
                         self.count_start = i;
                         self.state = FormulaParserState::Count;
                     } else {
                         let elt = self.parse_element_from_string(string, periodic_table);
-                        let isotope: u16 = match string[self.isotope_start..self.isotope_end].parse::<u16>() {
-                            Ok(val) => {val},
-                            Err(_msg) => {return Err(FormulaParserError::IsotopeCountMalformed);}
-                        };
+                        let isotope: u16 =
+                            match string[self.isotope_start..self.isotope_end].parse::<u16>() {
+                                Ok(val) => val,
+                                Err(_msg) => {
+                                    return Err(FormulaParserError::IsotopeCountMalformed);
+                                }
+                            };
                         let elt_spec = ElementSpecification {
                             element: elt,
-                            isotope: isotope
+                            isotope: isotope,
                         };
                         acc.inc(elt_spec, 1);
                         self.isotope_start = 0;
@@ -231,12 +243,15 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
                             return Err(FormulaParserError::IsotopeCountMalformed);
                         }
                     }
-                },
+                }
                 FormulaParserState::GroupToGroupCount => {
                     if !c.is_numeric() {
-                        let group = match Self::parse_with_table(&string[self.group_start..self.group_end], periodic_table) {
-                            Ok(grp) => {grp},
-                            Err(err) => {return Err(err)}
+                        let group = match Self::parse_with_table(
+                            &string[self.group_start..self.group_end],
+                            periodic_table,
+                        ) {
+                            Ok(grp) => grp,
+                            Err(err) => return Err(err),
                         };
                         self.group_start = 0;
                         self.group_end = 0;
@@ -259,16 +274,21 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
                 FormulaParserState::GroupCount => {
                     if !c.is_numeric() {
                         self.group_count_end = i;
-                        let group = match Self::parse_with_table(&string[self.group_start..self.group_end], periodic_table) {
-                            Ok(grp) => {grp},
-                            Err(err) => {return Err(err)}
+                        let group = match Self::parse_with_table(
+                            &string[self.group_start..self.group_end],
+                            periodic_table,
+                        ) {
+                            Ok(grp) => grp,
+                            Err(err) => return Err(err),
                         };
                         self.group_start = 0;
                         self.group_end = 0;
 
                         let group_count: i32 = match self.parse_group_count(string) {
-                            Ok(val) => {val},
-                            Err(_msg) => {return Err(FormulaParserError::ElementCountMalformed);}
+                            Ok(val) => val,
+                            Err(_msg) => {
+                                return Err(FormulaParserError::ElementCountMalformed);
+                            }
                         };
                         acc += &(&group * group_count);
 
@@ -294,20 +314,24 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
                 let elt = self.parse_element_from_string(string, periodic_table);
                 let elt_spec = ElementSpecification {
                     element: elt,
-                    isotope: 0
+                    isotope: 0,
                 };
                 acc.inc(elt_spec, 1);
-            },
+            }
             FormulaParserState::Count => {
                 self.count_end = i;
                 let count: i32 = match self.parse_element_count(string) {
-                    Ok(val) => {val},
-                    Err(_msg) => {return Err(FormulaParserError::ElementCountMalformed);}
+                    Ok(val) => val,
+                    Err(_msg) => {
+                        return Err(FormulaParserError::ElementCountMalformed);
+                    }
                 };
                 let isotope: u16 = if self.isotope_end != self.isotope_start {
                     match string[self.isotope_start..self.isotope_end].parse::<u16>() {
-                        Ok(val) => {val},
-                        Err(_msg) => {return Err(FormulaParserError::IsotopeCountMalformed);}
+                        Ok(val) => val,
+                        Err(_msg) => {
+                            return Err(FormulaParserError::IsotopeCountMalformed);
+                        }
                     }
                 } else {
                     0
@@ -315,46 +339,52 @@ impl<'transient, 'lifespan:'transient, 'separate> FormulaParser {
                 let elt = self.parse_element_from_string(string, periodic_table);
                 let elt_spec = ElementSpecification {
                     element: elt,
-                    isotope: isotope
+                    isotope: isotope,
                 };
                 acc.inc(elt_spec, count);
-            },
+            }
             FormulaParserState::GroupToGroupCount => {
-                let group = match Self::parse_with_table(&string[self.group_start..self.group_end], periodic_table) {
-                    Ok(grp) => {grp},
-                    Err(err) => {return Err(err)}
+                let group = match Self::parse_with_table(
+                    &string[self.group_start..self.group_end],
+                    periodic_table,
+                ) {
+                    Ok(grp) => grp,
+                    Err(err) => return Err(err),
                 };
                 acc += &group;
             }
             FormulaParserState::GroupCount => {
                 self.group_count_end = i;
-                let group = match Self::parse_with_table(&string[self.group_start..self.group_end], periodic_table) {
-                    Ok(grp) => {grp},
-                    Err(err) => {return Err(err)}
+                let group = match Self::parse_with_table(
+                    &string[self.group_start..self.group_end],
+                    periodic_table,
+                ) {
+                    Ok(grp) => grp,
+                    Err(err) => return Err(err),
                 };
                 self.group_start = 0;
                 self.group_end = 0;
 
-
                 let group_count: i32 = match self.parse_group_count(string) {
-                    Ok(val) => {val},
-                    Err(_msg) => {return Err(FormulaParserError::GroupCountMalformed);}
+                    Ok(val) => val,
+                    Err(_msg) => {
+                        return Err(FormulaParserError::GroupCountMalformed);
+                    }
                 };
                 acc += &(&group * group_count);
-            },
-            _ => {
-                return Err(FormulaParserError::IncompleteFormula)
             }
+            _ => return Err(FormulaParserError::IncompleteFormula),
         }
         return Ok(acc);
     }
 }
 
-
-pub fn parse_formula_with_table<'lifespan>(string: &str, periodic_table: &'lifespan PeriodicTable) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
+pub fn parse_formula_with_table<'lifespan>(
+    string: &str,
+    periodic_table: &'lifespan PeriodicTable,
+) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
     FormulaParser::parse_with_table(string, periodic_table)
 }
-
 
 #[cfg(test)]
 mod test {
