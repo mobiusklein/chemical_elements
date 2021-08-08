@@ -2,6 +2,8 @@ use std::cmp;
 use std::fmt;
 use std::ops;
 
+use crate::mz::{neutral_mass, PROTON};
+
 #[derive(Debug, Clone, Default)]
 pub struct Peak {
     pub mz: f64,
@@ -29,6 +31,24 @@ impl cmp::PartialEq<Peak> for Peak {
 impl cmp::PartialOrd<Peak> for Peak {
     fn partial_cmp(&self, other: &Peak) -> Option<cmp::Ordering> {
         return self.mz.partial_cmp(&other.mz);
+    }
+}
+
+impl Peak {
+    pub fn mzs(&self) -> f64 {
+        self.mz
+    }
+
+    pub fn intensity(&self) -> f32 {
+        self.intensity as f32
+    }
+
+    pub fn charge(&self) -> i32 {
+        self.charge
+    }
+
+    pub fn neutral_mass(&self) -> f64 {
+        neutral_mass(self.mz, self.charge, PROTON)
     }
 }
 
