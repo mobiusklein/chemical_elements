@@ -5,7 +5,7 @@ use std::convert::TryFrom;
 use std::fmt;
 use std::hash;
 use std::iter::FromIterator;
-use std::ops::{Add, AddAssign, Index, Mul, MulAssign, Sub, SubAssign, IndexMut};
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign};
 use std::str::FromStr;
 
 use crate::element::{Element, PeriodicTable};
@@ -147,6 +147,8 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         }
     }
 
+    /// Explicitly calculate the mass of the chemical composition, ignoring
+    /// any caching.
     pub fn calc_mass(&self) -> f64 {
         let mut total = 0.0;
         for (elt_spec, count) in &self.composition {
@@ -160,6 +162,8 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         return total;
     }
 
+    /// Get the mass of this chemical composition. If the mass cache
+    /// has been populated, return that instead of repeating the calculation.
     pub fn mass(&self) -> f64 {
         let mass = match self.mass_cache {
             None => self.calc_mass(),
@@ -168,6 +172,9 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         return mass;
     }
 
+    /// Get the mass of this chemical composition, and cache it,
+    /// or reuse the cached value. This requires mutability, so this method
+    /// must be called explicitly.
     pub fn fmass(&mut self) -> f64 {
         let mass = match self.mass_cache {
             None => {
@@ -180,6 +187,8 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         return mass;
     }
 
+    /// Access a specific element's count, or `0` if that element is absent
+    /// from the composition
     pub fn get(&self, elt_spec: &ElementSpecification<'lifespan>) -> i32 {
         return match self.composition.get(elt_spec) {
             Some(i) => *i,
@@ -271,29 +280,25 @@ impl<'lifespan> Index<&str> for ChemicalComposition<'lifespan> {
         let spec = ElementSpecification::try_from(key);
         match spec {
             Ok(spec) => self.composition.get(&spec).unwrap(),
-            Err(_err) => &ZERO
+            Err(_err) => &ZERO,
         }
     }
 }
 
 impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {
-
     fn index_mut(&mut self, key: &ElementSpecification<'lifespan>) -> &mut Self::Output {
         let entry = self.composition.entry(key.clone());
         entry.or_insert(0)
     }
 }
 
-
 impl<'lifespan> IndexMut<&str> for ChemicalComposition<'lifespan> {
-
     fn index_mut(&mut self, key: &str) -> &mut Self::Output {
         let key = ElementSpecification::try_from(key).unwrap();
         let entry = self.composition.entry(key);
         entry.or_insert(0)
     }
 }
-
 
 impl<'lifespan> PartialEq<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
     fn eq(&self, other: &ChemicalComposition<'lifespan>) -> bool {

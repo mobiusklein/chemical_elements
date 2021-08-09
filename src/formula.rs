@@ -2,6 +2,7 @@ use crate::table::PERIODIC_TABLE;
 use crate::ChemicalComposition;
 use crate::ElementSpecification;
 use crate::{Element, PeriodicTable};
+
 use std::num::ParseIntError;
 
 #[derive(Debug)]
@@ -389,6 +390,41 @@ pub fn parse_formula_with_table<'lifespan>(
     FormulaParser::parse_with_table(string, periodic_table)
 }
 
+pub fn to_formula<'lifespan>(composition: &ChemicalComposition<'lifespan>) -> String {
+    let mut result = String::with_capacity(composition.len() * 2);
+    let carbon_count = composition["C"];
+    if carbon_count != 0 {
+        result.push('C');
+        result.push_str(&carbon_count.to_string());
+    }
+    let carbon_count = composition["H"];
+    if carbon_count != 0 {
+        result.push('H');
+        result.push_str(&carbon_count.to_string());
+    }
+    let mut items: Vec<(&ElementSpecification, &i32)> = composition.iter().collect();
+    items.sort_by(|a, b| a.0.element.symbol.partial_cmp(&b.0.element.symbol).unwrap());
+    for (key, count) in composition.iter() {
+        // Skip the C and N
+        if ((key.element.symbol == "C") || (key.element.symbol == "H")) && key.isotope == 0 {
+            continue;
+        } else {
+            if key.isotope != 0 {
+                result.push_str(&format!("{}[{}]{}", key.element.symbol, key.isotope, count));
+            } else {
+                result.push_str(&format!("{}{}", key.element.symbol, count));
+            }
+        }
+    }
+    result
+}
+
+impl<'lifespan> ToString for ChemicalComposition<'lifespan> {
+    fn to_string(&self) -> String {
+        to_formula(self)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -400,5 +436,11 @@ mod test {
         let oxygen = ElementSpecification::parse_with("O", &PERIODIC_TABLE).unwrap();
         assert_eq!(res[&hydrogen], 2);
         assert_eq!(res[&oxygen], 1);
+    }
+
+    #[test]
+    fn test_to_string() {
+        let res = FormulaParser::parse("H12O6C6N2").unwrap();
+        assert_eq!(res.to_string(), "C6H12O6N2");
     }
 }

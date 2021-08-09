@@ -4076,6 +4076,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 }
 
 lazy_static! {
+    /// A global, populated [`PeriodicTable`] instance to use for reference
     pub static ref PERIODIC_TABLE: PeriodicTable = {
         let mut t = PeriodicTable::new();
         populate_periodic_table(&mut t);
