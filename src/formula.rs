@@ -403,8 +403,8 @@ pub fn to_formula<'lifespan>(composition: &ChemicalComposition<'lifespan>) -> St
         result.push_str(&carbon_count.to_string());
     }
     let mut items: Vec<(&ElementSpecification, &i32)> = composition.iter().collect();
-    items.sort_by(|a, b| a.0.element.symbol.partial_cmp(&b.0.element.symbol).unwrap());
-    for (key, count) in composition.iter() {
+    items.sort_by(|a, b| a.0.element.symbol.cmp(&b.0.element.symbol));
+    for (key, count) in items {
         // Skip the C and N
         if ((key.element.symbol == "C") || (key.element.symbol == "H")) && key.isotope == 0 {
             continue;
@@ -441,6 +441,6 @@ mod test {
     #[test]
     fn test_to_string() {
         let res = FormulaParser::parse("H12O6C6N2").unwrap();
-        assert_eq!(res.to_string(), "C6H12O6N2");
+        assert_eq!(res.to_string(), "C6H12N2O6");
     }
 }
