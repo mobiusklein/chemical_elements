@@ -628,6 +628,15 @@ mod test {
     }
 
     #[test]
+    fn test_sulfur() {
+        let comp = ChemicalComposition::parse("C6H13O5S1H3").unwrap();
+        let peaks = isotopic_variants(&comp, 0, 1, PROTON);
+        assert_eq!(peaks.len(), 5);
+        assert!((peaks[0].neutral_mass() - 200.071846).abs() < 1e-6);
+        assert!((peaks[0].intensity() - 0.8782583).abs() < 1e-6);
+    }
+
+    #[test]
     fn test_baffling_generator() {
         let comp = ChemicalComposition::parse("C6H12O6").unwrap();
         let mut generator = BafflingRecursiveIsotopicPatternGenerator::new();

@@ -48,7 +48,11 @@ impl Peak {
     }
 
     pub fn neutral_mass(&self) -> f64 {
-        neutral_mass(self.mz, self.charge, PROTON)
+        if self.charge == 0 {
+            self.mz
+        } else {
+            neutral_mass(self.mz, self.charge, PROTON)
+        }
     }
 }
 
