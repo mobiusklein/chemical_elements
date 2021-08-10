@@ -550,6 +550,11 @@ impl<'a> IsotopicDistribution<'a> {
     }
 }
 
+
+/// Generate a coarse isotopic pattern from a [`ChemicalComposition`]
+/// with the specified peak count and charge state.
+///
+/// if `npeaks` is 0, a guess will be used.
 pub fn isotopic_variants<'a>(
     composition: &'a ChemicalComposition<'a>,
     npeaks: i32,

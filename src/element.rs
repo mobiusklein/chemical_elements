@@ -5,6 +5,9 @@ use std::hash;
 use std::ops;
 
 #[derive(Debug, Clone, Default)]
+/** A known isotope of an element with a known number of neutrons,
+mass, and relative abundance
+*/
 pub struct Isotope {
     pub mass: f64,
     pub abundance: f64,
@@ -54,6 +57,11 @@ impl cmp::PartialOrd<Isotope> for Isotope {
 }
 
 #[derive(Debug, Clone, Default)]
+/** A chemical element with known masses and isotopic frequency.
+
+This type forms the foundation of the library, and is *usually*
+treated like a singleton in a [`PeriodicTable`].
+*/
 pub struct Element {
     pub symbol: String,
     pub isotopes: HashMap<u16, Isotope>,
@@ -131,6 +139,13 @@ impl cmp::PartialEq<Element> for Element {
 }
 
 #[derive(Debug, Clone, Default)]
+/** A mapping connecting [`Element`] to its textual symbol.
+
+This type is referenced indirectly through all other structures
+that depend upon [`Element`] or [`ChemicalComposition`](crate::ChemicalComposition).
+
+A global `lazy_static` constant is available as `PERIODIC_TABLE`.
+*/
 pub struct PeriodicTable {
     pub elements: HashMap<String, Element>,
 }

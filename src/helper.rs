@@ -5,6 +5,11 @@ use crate::{
 };
 
 #[allow(non_snake_case)]
+/** A helper data structure that encapsulates
+a [`PeriodicTable`], along with some pre-parsed
+[`ElementSpecification`] and [`ChemicalComposition`]
+instances for convenience.
+*/
 pub struct ChemicalElements<'lifespan> {
     pub periodic_table: PeriodicTable,
     pub C: ElementSpecification<'lifespan>,
@@ -13,6 +18,7 @@ pub struct ChemicalElements<'lifespan> {
     pub N: ElementSpecification<'lifespan>,
     pub S: ElementSpecification<'lifespan>,
     pub H2O: ChemicalComposition<'lifespan>,
+    pub OH: ChemicalComposition<'lifespan>,
     pub NH2: ChemicalComposition<'lifespan>,
 }
 
@@ -34,6 +40,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalElements<'lifespan> {
             N: ElementSpecification::parse_with("N", &PERIODIC_TABLE).unwrap(),
             S: ElementSpecification::parse_with("S", &PERIODIC_TABLE).unwrap(),
             H2O: ChemicalComposition::parse_with("H2O", &PERIODIC_TABLE).unwrap(),
+            OH: -&ChemicalComposition::parse("OH").unwrap(),
             NH2: ChemicalComposition::parse_with("NH2", &PERIODIC_TABLE).unwrap(),
         };
         ce

@@ -1,3 +1,5 @@
+//! Implementation of isotopic pattern generator.
+
 pub mod baffling;
 pub mod peak;
 
