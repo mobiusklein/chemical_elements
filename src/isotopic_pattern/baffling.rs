@@ -1,3 +1,5 @@
+//! An implementation of the Baffling Recursive Algorithm for Isotopic distributioN (BRAIN)
+//! originally published in [Dittwald, 2013](http://dx.doi.org/10.1021/ac303439m).
 use std::cmp;
 use std::collections::hash_map::Entry;
 use std::collections::HashMap;
