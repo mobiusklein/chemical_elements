@@ -89,8 +89,14 @@ impl PolynomialParameters {
 
         for z in min_neutron_shift..max_isotope_number + 1 {
             let i = (z - min_neutron_shift) as usize;
-            let k = (n - i - 1 + monoisotopic_number) as u16;
-            let isotope = element.isotopes.get(&k).unwrap();
+            let k = (n + monoisotopic_number - i - 1) as u16;
+            // let isotope = match element.isotope_by_shift(&k) {
+            let isotope = match element.isotopes.get(&k) {
+                Some(isotope) => isotope,
+                None => {
+                    continue;
+                }
+            };
             let current_order = (max_isotope_number - isotope.neutron_shift) as usize;
             let coef = if with_mass { isotope.mass } else { 1.0 };
             if current_order > accumulator.len() {

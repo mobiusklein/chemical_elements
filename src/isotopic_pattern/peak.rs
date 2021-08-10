@@ -35,7 +35,7 @@ impl cmp::PartialOrd<Peak> for Peak {
 }
 
 impl Peak {
-    pub fn mzs(&self) -> f64 {
+    pub fn mz(&self) -> f64 {
         self.mz
     }
 

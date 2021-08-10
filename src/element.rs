@@ -97,6 +97,11 @@ impl Element {
         }
     }
 
+    pub fn isotope_by_shift(&self, shift: i8) -> Option<&Isotope> {
+        let num = self.most_abundant_isotope as i16 + shift as i16;
+        self.isotopes.get(&(num as u16))
+    }
+
     pub fn index_isotopes(&mut self) {
         self.max_neutron_shift = 0;
         self.min_neutron_shift = 0;
