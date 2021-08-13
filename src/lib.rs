@@ -18,7 +18,7 @@
 //!
 //! let composition = ChemicalComposition::parse("C34H53O15N7").unwrap();
 //! // Use the guessed number of peaks
-//! let peaks = isotopic_variants(&composition, 0, 1, PROTON);
+//! let peaks = isotopic_variants(composition, 0, 1, PROTON);
 //! for peak in peaks.iter() {
 //!     println!("{}", peak);
 //! }

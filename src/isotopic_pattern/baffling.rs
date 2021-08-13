@@ -235,7 +235,7 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan, 'outer> {
 }
 
 pub struct IsotopicConstantsCache<'lifespan> {
-    pub cache: HashMap<String, PhiConstants<'lifespan>>,
+    pub cache: HashMap<&'lifespan str, PhiConstants<'lifespan>>,
 }
 
 impl<'lifespan, 'outer: 'lifespan> IsotopicConstantsCache<'lifespan> {
@@ -249,8 +249,8 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstantsCache<'lifespan> {
         self.cache.remove(symbol)
     }
 
-    pub fn receive(&mut self, symbol: &str, constants: PhiConstants<'lifespan>) -> bool {
-        let entry = self.cache.entry(symbol.to_string());
+    pub fn receive(&mut self, symbol: &'lifespan str, constants: PhiConstants<'lifespan>) -> bool {
+        let entry = self.cache.entry(symbol);
         match entry {
             Entry::Vacant(ent) => {
                 ent.insert(constants);
@@ -311,7 +311,7 @@ impl<'a> ElementPolynomialMap<'a> {
 
 #[derive(Debug)]
 pub struct IsotopicDistribution<'lifespan, 'outer> {
-    pub composition: &'lifespan ChemicalComposition<'outer>,
+    pub composition: ChemicalComposition<'outer>,
     pub constants: IsotopicConstants<'lifespan, 'outer>,
     pub order: i32,
     pub average_mass: f64,
@@ -321,7 +321,7 @@ pub struct IsotopicDistribution<'lifespan, 'outer> {
 
 impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<'lifespan, 'outer> {
     pub fn from_composition(
-        composition: &'lifespan ChemicalComposition<'lifespan>,
+        composition: ChemicalComposition<'lifespan>,
         order: i32,
     ) -> IsotopicDistribution {
         let mut inst = IsotopicDistribution::fill_from_composition(composition, order);
@@ -330,20 +330,20 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
     }
 
     fn fill_from_composition(
-        composition: &'lifespan ChemicalComposition<'outer>,
+        composition: ChemicalComposition<'outer>,
         order: i32,
     ) -> IsotopicDistribution<'lifespan, 'outer> {
         let mut inst = IsotopicDistribution {
+            constants: IsotopicConstants::new(composition.len()),
+            max_variants: max_variants(&composition),
             composition,
             order: 0,
             average_mass: 0.0,
-            constants: IsotopicConstants::new(composition.len()),
             monoisotopic_peak: Peak {
                 mz: 0.0,
                 intensity: 0.0,
                 charge: 0,
             },
-            max_variants: max_variants(composition),
         };
         inst.update_order(order);
         inst.monoisotopic_peak = inst.make_monoisotopic_peak();
@@ -351,7 +351,7 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
     }
 
     pub fn from_composition_and_cache(
-        composition: &'lifespan ChemicalComposition<'outer>,
+        composition: ChemicalComposition<'outer>,
         order: i32,
         cache: &'transient mut IsotopicConstantsCache<'outer>,
     ) -> IsotopicDistribution<'lifespan, 'outer> {
@@ -564,13 +564,13 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
 ///
 /// if `npeaks` is 0, a guess will be used.
 pub fn isotopic_variants<'a>(
-    composition: &'a ChemicalComposition<'a>,
+    composition: ChemicalComposition<'a>,
     npeaks: i32,
     charge: i32,
     charge_carrier: f64,
 ) -> PeakList {
     let npeaks = if npeaks == 0 {
-        guess_npeaks(composition, 300)
+        guess_npeaks(&composition, 300)
     } else {
         npeaks - 1
     };
@@ -607,7 +607,7 @@ impl<'transient, 'lifespan: 'transient, 'outer: 'lifespan> BafflingRecursiveIsot
         //     npeaks,
         //     &mut self.parameter_cache,
         // );
-        let mut dist = IsotopicDistribution::fill_from_composition(&composition, npeaks);
+        let mut dist = IsotopicDistribution::fill_from_composition(composition, npeaks);
         dist.populate_constants_from_cache(&mut self.parameter_cache);
         let peaks = dist.isotopic_variants(charge, charge_carrier);
         self.parameter_cache.receive_from(dist.constants);
@@ -623,7 +623,7 @@ mod test {
     #[test]
     fn test_baffling() {
         let comp = ChemicalComposition::parse("C6H12O6").unwrap();
-        let peaks = isotopic_variants(&comp, 5, 0, PROTON);
+        let peaks = isotopic_variants(comp, 5, 0, PROTON);
         assert_eq!(peaks.len(), 5);
         assert!((peaks[0].mz - 180.06339).abs() < 1e-6);
         assert!((peaks[0].intensity - 0.9226372340115745).abs() < 1e-6)
@@ -632,7 +632,7 @@ mod test {
     #[test]
     fn test_sulfur() {
         let comp = ChemicalComposition::parse("C6H13O5S1H3").unwrap();
-        let peaks = isotopic_variants(&comp, 0, 1, PROTON);
+        let peaks = isotopic_variants(comp, 0, 1, PROTON);
         assert_eq!(peaks.len(), 5);
         assert!((peaks[0].neutral_mass() - 200.071846).abs() < 1e-6);
         assert!((peaks[0].intensity() - 0.8782583).abs() < 1e-6);
@@ -642,11 +642,11 @@ mod test {
     fn test_baffling_generator() {
         let comp = ChemicalComposition::parse("C6H12O6").unwrap();
         let mut generator = BafflingRecursiveIsotopicPatternGenerator::new();
-        let peaks = generator.isotopic_variants(&comp, 5, 0, PROTON);
+        let peaks = generator.isotopic_variants(comp.clone(), 5, 0, PROTON);
         assert_eq!(peaks.len(), 5);
         assert!((peaks[0].mz - 180.06339).abs() < 1e-6);
         assert!((peaks[0].intensity - 0.9226372340115745).abs() < 1e-6);
-        let peaks = generator.isotopic_variants(&comp, 5, 0, PROTON);
+        let peaks = generator.isotopic_variants(comp.clone(), 5, 0, PROTON);
         assert_eq!(peaks.len(), 5);
         assert!((peaks[0].mz - 180.06339).abs() < 1e-6);
         assert!((peaks[0].intensity - 0.9226372340115745).abs() < 1e-6);
