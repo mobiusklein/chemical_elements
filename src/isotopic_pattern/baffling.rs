@@ -590,6 +590,7 @@ impl<'transient, 'lifespan: 'transient, 'outer: 'lifespan> BafflingRecursiveIsot
         }
     }
 
+    #[inline]
     pub fn isotopic_variants(
         &mut self,
         composition: ChemicalComposition<'outer>,

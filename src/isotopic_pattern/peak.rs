@@ -18,6 +18,7 @@ impl fmt::Display for Peak {
 }
 
 impl cmp::PartialEq<Peak> for Peak {
+    #[inline]
     fn eq(&self, other: &Peak) -> bool {
         if (self.mz - other.mz).abs() > 1e-3 {
             return false;
@@ -29,24 +30,29 @@ impl cmp::PartialEq<Peak> for Peak {
 }
 
 impl cmp::PartialOrd<Peak> for Peak {
+    #[inline]
     fn partial_cmp(&self, other: &Peak) -> Option<cmp::Ordering> {
         return self.mz.partial_cmp(&other.mz);
     }
 }
 
 impl Peak {
+    #[inline]
     pub fn mz(&self) -> f64 {
         self.mz
     }
 
+    #[inline]
     pub fn intensity(&self) -> f32 {
         self.intensity as f32
     }
 
+    #[inline]
     pub fn charge(&self) -> i32 {
         self.charge
     }
 
+    #[inline]
     pub fn neutral_mass(&self) -> f64 {
         if self.charge == 0 {
             self.mz
@@ -65,14 +71,17 @@ pub struct TheoreticalIsotopicPattern {
 }
 
 impl TheoreticalIsotopicPattern {
+    #[inline]
     pub fn new(peaks: PeakList, origin: f64) -> TheoreticalIsotopicPattern {
         TheoreticalIsotopicPattern { peaks, origin }
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         return self.peaks.len();
     }
 
+    #[inline]
     pub fn clone_drop_last(&self) -> TheoreticalIsotopicPattern {
         let n = self.len();
         let mut peaks = PeakList::with_capacity(n);
@@ -91,6 +100,7 @@ impl TheoreticalIsotopicPattern {
         result
     }
 
+    #[inline]
     pub fn clone_shifted(&self, offset: f64) -> TheoreticalIsotopicPattern {
         let n = self.len();
         let mut peaks = PeakList::with_capacity(n);
@@ -102,10 +112,12 @@ impl TheoreticalIsotopicPattern {
         TheoreticalIsotopicPattern::new(peaks, self.origin + offset)
     }
 
+    #[inline]
     pub fn total(&self) -> f64 {
         self.peaks.iter().map(|p| p.intensity).sum()
     }
 
+    #[inline]
     pub fn scale_by(&mut self, factor: f64) -> &TheoreticalIsotopicPattern {
         for p in self.peaks.iter_mut() {
             p.intensity *= factor;
@@ -113,11 +125,13 @@ impl TheoreticalIsotopicPattern {
         return self;
     }
 
+    #[inline]
     pub fn normalize(&mut self) -> &TheoreticalIsotopicPattern {
         let total = self.total();
         self.scale_by(1.0 / total)
     }
 
+    #[inline]
     pub fn truncate_after(&mut self, threshold: f64) -> &TheoreticalIsotopicPattern {
         let mut total = 0.0;
         let mut stop_index = 0;
@@ -132,6 +146,7 @@ impl TheoreticalIsotopicPattern {
         self.normalize()
     }
 
+    #[inline]
     pub fn ignore_below(&mut self, threshold: f64) -> &TheoreticalIsotopicPattern {
         let mut acc = PeakList::with_capacity(self.len());
         for peak in self.peaks.drain(..) {
@@ -162,6 +177,7 @@ impl fmt::Display for TheoreticalIsotopicPattern {
 impl ops::Index<usize> for TheoreticalIsotopicPattern {
     type Output = Peak;
 
+    #[inline]
     fn index(&self, i: usize) -> &Self::Output {
         return &(self.peaks[i]);
     }
@@ -177,6 +193,7 @@ impl<'a> IntoIterator for &'a TheoreticalIsotopicPattern {
 }
 
 impl From<PeakList> for TheoreticalIsotopicPattern {
+    #[inline]
     fn from(src: PeakList) -> Self {
         let origin = src[0].mz;
         Self::new(src, origin)
@@ -200,6 +217,7 @@ impl<'a> TheoreticalIsotopicPatternIter<'a> {
 impl<'a> Iterator for TheoreticalIsotopicPatternIter<'a> {
     type Item = &'a Peak;
 
+    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         return self.iter.next();
     }

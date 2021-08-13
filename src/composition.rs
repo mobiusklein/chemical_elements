@@ -29,21 +29,19 @@ pub struct ElementSpecification<'element> {
 }
 
 impl<'a> cmp::PartialEq for ElementSpecification<'a> {
+    #[inline]
     fn eq(&self, other: &ElementSpecification) -> bool {
         if self.element != other.element {
             return false;
         }
         return self.isotope == other.isotope;
     }
-
-    fn ne(&self, other: &ElementSpecification) -> bool {
-        return !(self == other);
-    }
 }
 
 impl<'a> cmp::Eq for ElementSpecification<'a> {}
 
 impl<'element> hash::Hash for ElementSpecification<'element> {
+    #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         self.element.hash(state);
     }
@@ -68,6 +66,7 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
         return ElementSpecification { element, isotope };
     }
 
+    #[inline]
     pub fn to_string(&self) -> String {
         if self.isotope == 0 {
             return format!("{}", self.element.symbol);
@@ -76,12 +75,14 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
         }
     }
 
+    #[inline]
     pub fn parse(
         string: &'transient str,
     ) -> Result<ElementSpecification<'lifespan>, ElementSpecificationParsingError> {
         Self::parse_with(string, &PERIODIC_TABLE)
     }
 
+    #[inline]
     pub fn parse_with(
         string: &'transient str,
         periodic_table: &'lifespan PeriodicTable,
@@ -155,6 +156,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         }
     }
 
+    #[inline]
     /// Explicitly calculate the mass of the chemical composition, ignoring
     /// any caching.
     pub fn calc_mass(&self) -> f64 {
@@ -170,6 +172,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         return total;
     }
 
+    #[inline]
     /// Get the mass of this chemical composition. If the mass cache
     /// has been populated, return that instead of repeating the calculation.
     pub fn mass(&self) -> f64 {
@@ -180,6 +183,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         return mass;
     }
 
+    #[inline]
     /// Get the mass of this chemical composition, and cache it,
     /// or reuse the cached value. This requires mutability, so this method
     /// must be called explicitly.
@@ -195,6 +199,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         return mass;
     }
 
+    #[inline]
     /// Access a specific element's count, or `0` if that element is absent
     /// from the composition
     pub fn get(&self, elt_spec: &ElementSpecification<'lifespan>) -> i32 {
@@ -204,12 +209,14 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         };
     }
 
+    #[inline]
     /// Set the count for a specific element. This will invalidate the mass cache.
     pub fn set(&mut self, elt_spec: ElementSpecification<'lifespan>, count: i32) {
         self.composition.insert(elt_spec, count);
         self.mass_cache = None;
     }
 
+    #[inline]
     /// Add some value to the count of the specified element. This will invalidate the
     /// mass cache.
     pub fn inc(&mut self, elt_spec: ElementSpecification<'lifespan>, count: i32) {
@@ -217,16 +224,19 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         self.set(elt_spec, i + count);
     }
 
+    #[inline]
     pub fn iter(&self) -> Iter<ElementSpecification<'lifespan>, i32> {
         return (self.composition).iter();
     }
 
+    #[inline]
     fn _add_from(&'outer mut self, other: &'transient ChemicalComposition<'lifespan>) {
         for (key, val) in other.composition.iter() {
             self.inc(key.clone(), *val);
         }
     }
 
+    #[inline]
     fn _sub_from(&'outer mut self, other: &'transient ChemicalComposition<'lifespan>) {
         for (key, val) in other.composition.iter() {
             let newkey: ElementSpecification<'lifespan> = key.clone();
@@ -234,6 +244,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         }
     }
 
+    #[inline]
     fn _mul_by(&mut self, scaler: i32) {
         let keys: Vec<ElementSpecification> =
             (&mut self.composition).keys().map(|e| e.clone()).collect();
@@ -242,6 +253,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         }
     }
 
+    #[inline]
     pub fn len(&self) -> usize {
         self.composition.len()
     }
@@ -250,12 +262,14 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         self.len() == 0
     }
 
+    #[inline]
     /// Parse a text formula into a [`ChemicalComposition`] using the
     /// global element table
     pub fn parse(string: &str) -> Result<ChemicalComposition, FormulaParserError> {
         parse_formula(string)
     }
 
+    #[inline]
     /// Parse a text formula into a [`ChemicalComposition`], using the specified
     /// element table
     pub fn parse_with(
@@ -269,6 +283,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
 impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {
     type Output = i32;
 
+    #[inline]
     fn index(&self, key: &ElementSpecification<'lifespan>) -> &Self::Output {
         let ent = self.composition.get(key);
         return ent.unwrap();
@@ -280,6 +295,7 @@ const ZERO: i32 = 0;
 impl<'lifespan> Index<&str> for ChemicalComposition<'lifespan> {
     type Output = i32;
 
+    #[inline]
     fn index(&self, key: &str) -> &Self::Output {
         let spec = ElementSpecification::try_from(key);
         match spec {
@@ -290,6 +306,7 @@ impl<'lifespan> Index<&str> for ChemicalComposition<'lifespan> {
 }
 
 impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {
+    #[inline]
     fn index_mut(&mut self, key: &ElementSpecification<'lifespan>) -> &mut Self::Output {
         self.mass_cache = None;
         let entry = self.composition.entry(key.clone());
@@ -298,6 +315,7 @@ impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalCompositi
 }
 
 impl<'lifespan> IndexMut<&str> for ChemicalComposition<'lifespan> {
+    #[inline]
     fn index_mut(&mut self, key: &str) -> &mut Self::Output {
         self.mass_cache = None;
         let key = ElementSpecification::try_from(key).unwrap();
@@ -307,6 +325,7 @@ impl<'lifespan> IndexMut<&str> for ChemicalComposition<'lifespan> {
 }
 
 impl<'lifespan> PartialEq<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+    #[inline]
     fn eq(&self, other: &ChemicalComposition<'lifespan>) -> bool {
         self.composition == other.composition
     }
@@ -315,6 +334,7 @@ impl<'lifespan> PartialEq<ChemicalComposition<'lifespan>> for ChemicalCompositio
 impl<'lifespan> Add<&ChemicalComposition<'lifespan>> for &ChemicalComposition<'lifespan> {
     type Output = ChemicalComposition<'lifespan>;
 
+    #[inline]
     fn add(self, other: &ChemicalComposition<'lifespan>) -> Self::Output {
         let mut inst = self.clone();
         inst._add_from(other);
@@ -325,6 +345,7 @@ impl<'lifespan> Add<&ChemicalComposition<'lifespan>> for &ChemicalComposition<'l
 impl<'lifespan> Sub<&'lifespan ChemicalComposition<'_>> for &ChemicalComposition<'lifespan> {
     type Output = ChemicalComposition<'lifespan>;
 
+    #[inline]
     fn sub(self, other: &'lifespan ChemicalComposition<'_>) -> Self::Output {
         let mut inst = self.clone();
         inst._sub_from(other);
@@ -335,6 +356,7 @@ impl<'lifespan> Sub<&'lifespan ChemicalComposition<'_>> for &ChemicalComposition
 impl<'lifespan> Mul<i32> for &ChemicalComposition<'lifespan> {
     type Output = ChemicalComposition<'lifespan>;
 
+    #[inline]
     fn mul(self, other: i32) -> Self::Output {
         let mut inst = self.clone();
         inst._mul_by(other);
@@ -343,18 +365,21 @@ impl<'lifespan> Mul<i32> for &ChemicalComposition<'lifespan> {
 }
 
 impl<'lifespan> AddAssign<&ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+    #[inline]
     fn add_assign(&mut self, other: &ChemicalComposition<'lifespan>) {
         self._add_from(other);
     }
 }
 
 impl<'lifespan> SubAssign<&'_ ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+    #[inline]
     fn sub_assign(&mut self, other: &'_ ChemicalComposition<'lifespan>) {
         self._sub_from(other);
     }
 }
 
 impl<'lifespan> MulAssign<i32> for ChemicalComposition<'_> {
+    #[inline]
     fn mul_assign(&mut self, other: i32) {
         self._mul_by(other);
     }
@@ -363,6 +388,7 @@ impl<'lifespan> MulAssign<i32> for ChemicalComposition<'_> {
 impl<'lifespan> Neg for &ChemicalComposition<'lifespan> {
     type Output = ChemicalComposition<'lifespan>;
 
+    #[inline]
     fn neg(self) -> Self::Output {
         let mut dup = self.clone();
         dup._mul_by(-1);
@@ -373,6 +399,7 @@ impl<'lifespan> Neg for &ChemicalComposition<'lifespan> {
 impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)>
     for ChemicalComposition<'lifespan>
 {
+    #[inline]
     fn from_iter<T>(iter: T) -> Self
     where
         T: IntoIterator<Item = (ElementSpecification<'lifespan>, i32)>,
@@ -386,6 +413,7 @@ impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)>
 }
 
 impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalComposition<'lifespan> {
+    #[inline]
     fn from_iter<T>(iter: T) -> Self
     where
         T: IntoIterator<Item = (&'lifespan str, i32)>,
@@ -400,6 +428,8 @@ impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalComposition<'lif
 }
 
 impl<'lifespan> convert::From<Vec<(&'lifespan str, i32)>> for ChemicalComposition<'lifespan> {
+
+    #[inline]
     fn from(elements: Vec<(&'lifespan str, i32)>) -> Self {
         let composition: ChemicalComposition<'lifespan> = elements.iter().cloned().collect();
         return composition;

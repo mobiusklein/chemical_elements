@@ -46,6 +46,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalElements<'lifespan> {
         ce
     }
 
+    #[inline]
     pub fn parse_formula(
         &self,
         string: &'transient str,
@@ -53,6 +54,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalElements<'lifespan> {
         ChemicalComposition::parse_with(string, &self.periodic_table)
     }
 
+    #[inline]
     pub fn parse_element(
         &self,
         string: &'transient str,

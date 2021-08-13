@@ -123,12 +123,14 @@ impl fmt::Display for Element {
 }
 
 impl hash::Hash for Element {
+    #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         self.symbol.hash(state);
     }
 }
 
 impl cmp::PartialEq<Element> for Element {
+    #[inline]
     fn eq(&self, other: &Element) -> bool {
         if self.symbol != other.symbol {
             return false;
@@ -170,6 +172,7 @@ impl PeriodicTable {
 impl ops::Index<&String> for PeriodicTable {
     type Output = Element;
 
+    #[inline]
     fn index(&self, i: &String) -> &Self::Output {
         return &self.elements[i];
     }
@@ -178,6 +181,7 @@ impl ops::Index<&String> for PeriodicTable {
 impl ops::Index<&str> for PeriodicTable {
     type Output = Element;
 
+    #[inline]
     fn index(&self, i: &str) -> &Self::Output {
         return &self.elements[i];
     }
