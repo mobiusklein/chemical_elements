@@ -92,12 +92,11 @@ impl TheoreticalIsotopicPattern {
             peaks.push(peak.clone());
         }
 
-        let mut result = TheoreticalIsotopicPattern {
+        let result = TheoreticalIsotopicPattern {
             peaks,
             origin: self.origin,
         };
-        result.normalize();
-        result
+        result.normalize()
     }
 
     #[inline]
@@ -118,7 +117,7 @@ impl TheoreticalIsotopicPattern {
     }
 
     #[inline]
-    pub fn scale_by(&mut self, factor: f64) -> &TheoreticalIsotopicPattern {
+    pub fn scale_by(mut self, factor: f64) -> TheoreticalIsotopicPattern {
         for p in self.peaks.iter_mut() {
             p.intensity *= factor;
         }
@@ -126,13 +125,13 @@ impl TheoreticalIsotopicPattern {
     }
 
     #[inline]
-    pub fn normalize(&mut self) -> &TheoreticalIsotopicPattern {
+    pub fn normalize(self) -> TheoreticalIsotopicPattern {
         let total = self.total();
         self.scale_by(1.0 / total)
     }
 
     #[inline]
-    pub fn truncate_after(&mut self, threshold: f64) -> &TheoreticalIsotopicPattern {
+    pub fn truncate_after(mut self, threshold: f64) -> TheoreticalIsotopicPattern {
         let mut total = 0.0;
         let mut stop_index = 0;
         for (i, p) in self.peaks.iter().enumerate() {
@@ -147,7 +146,7 @@ impl TheoreticalIsotopicPattern {
     }
 
     #[inline]
-    pub fn ignore_below(&mut self, threshold: f64) -> &TheoreticalIsotopicPattern {
+    pub fn ignore_below(mut self, threshold: f64) -> TheoreticalIsotopicPattern {
         let mut acc = PeakList::with_capacity(self.len());
         for peak in self.peaks.drain(..) {
             if peak.intensity >= threshold {
