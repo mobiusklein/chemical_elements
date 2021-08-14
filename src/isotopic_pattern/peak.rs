@@ -29,6 +29,8 @@ impl cmp::PartialEq<Peak> for Peak {
     }
 }
 
+impl Eq for Peak {}
+
 impl cmp::PartialOrd<Peak> for Peak {
     #[inline]
     fn partial_cmp(&self, other: &Peak) -> Option<cmp::Ordering> {
@@ -245,6 +247,32 @@ impl From<PeakList> for TheoreticalIsotopicPattern {
         Self::new(src, origin)
     }
 }
+
+impl PartialEq for TheoreticalIsotopicPattern {
+    fn eq(&self, other: &Self) -> bool {
+        for (a, b) in self.iter().zip(other.iter()) {
+            if a != b {
+                return false
+            }
+        }
+        true
+    }
+}
+
+
+impl PartialEq<[Peak]> for TheoreticalIsotopicPattern {
+    fn eq(&self, other: &[Peak]) -> bool {
+        for (a, b) in self.iter().zip(other.iter()) {
+            if a != b {
+                return false
+            }
+        }
+        true
+    }
+}
+
+
+impl Eq for TheoreticalIsotopicPattern {}
 
 // Iterators
 
