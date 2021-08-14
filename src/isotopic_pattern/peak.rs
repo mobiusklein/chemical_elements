@@ -65,6 +65,10 @@ impl Peak {
 pub type PeakList = Vec<Peak>;
 
 #[derive(Debug, Clone)]
+/**
+A theoretical isotopic pattern that supports a variety of mutating
+transformations.
+*/
 pub struct TheoreticalIsotopicPattern {
     pub peaks: PeakList,
     pub origin: f64,
@@ -82,6 +86,10 @@ impl TheoreticalIsotopicPattern {
     }
 
     #[inline]
+    /**
+    Clone this peak list, omitting the last peak and normalizing it
+    along the way.
+    */
     pub fn clone_drop_last(&self) -> TheoreticalIsotopicPattern {
         let n = self.len();
         let mut peaks = PeakList::with_capacity(n);
@@ -100,6 +108,9 @@ impl TheoreticalIsotopicPattern {
     }
 
     #[inline]
+    /**
+    Shift the m/z of each peak in the list by `offset`
+    */
     pub fn shift(mut self, offset: f64) -> TheoreticalIsotopicPattern {
         self.origin += offset;
         for peak in &mut self {
@@ -109,6 +120,8 @@ impl TheoreticalIsotopicPattern {
     }
 
     #[inline]
+    /**Clone the peak list, shifting the m/z of the generated peaks by `offset`
+    along the way*/
     pub fn clone_shifted(&self, offset: f64) -> TheoreticalIsotopicPattern {
         let n = self.len();
         let mut peaks = PeakList::with_capacity(n);
@@ -121,11 +134,13 @@ impl TheoreticalIsotopicPattern {
     }
 
     #[inline]
+    /**Compute the sum of the intensities for this peak list*/
     pub fn total(&self) -> f64 {
         self.peaks.iter().map(|p| p.intensity).sum()
     }
 
     #[inline]
+    /**Scale the intensity of each peak by `factor` */
     pub fn scale_by(mut self, factor: f64) -> TheoreticalIsotopicPattern {
         for p in self.peaks.iter_mut() {
             p.intensity *= factor;
@@ -134,12 +149,15 @@ impl TheoreticalIsotopicPattern {
     }
 
     #[inline]
+    /**Normalize the intensity of each peak in the isotopic pattern such that the total
+    sums to 1.0*/
     pub fn normalize(self) -> TheoreticalIsotopicPattern {
         let total = self.total();
         self.scale_by(1.0 / total)
     }
 
     #[inline]
+    /**Truncate the peak list after the cumulative intensity meets or exceeds `threshold` */
     pub fn truncate_after(mut self, threshold: f64) -> TheoreticalIsotopicPattern {
         let mut total = 0.0;
         let mut stop_index = 0;
@@ -155,6 +173,7 @@ impl TheoreticalIsotopicPattern {
     }
 
     #[inline]
+    /**Drop any peaks in the isotopic pattern whose intensity is below `threshold` */
     pub fn ignore_below(mut self, threshold: f64) -> TheoreticalIsotopicPattern {
         let mut acc = PeakList::with_capacity(self.len());
         for peak in self.peaks.drain(..) {
@@ -164,6 +183,16 @@ impl TheoreticalIsotopicPattern {
         }
         self.peaks = acc;
         self.normalize()
+    }
+
+    #[inline]
+    pub fn iter(&self) -> TheoreticalIsotopicPatternIter {
+        TheoreticalIsotopicPatternIter::new(self)
+    }
+
+    #[inline]
+    pub fn iter_mut(&mut self) -> TheoreticalIsotopicPatternIterMut {
+        TheoreticalIsotopicPatternIterMut::new(self)
     }
 }
 

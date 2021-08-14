@@ -603,11 +603,6 @@ impl<'transient, 'lifespan: 'transient, 'outer: 'lifespan> BafflingRecursiveIsot
         } else {
             npeaks - 1
         };
-        // let dist = IsotopicDistribution::from_composition_and_cache(
-        //     composition,
-        //     npeaks,
-        //     &mut self.parameter_cache,
-        // );
         let mut dist = IsotopicDistribution::fill_from_composition(composition, npeaks);
         dist.populate_constants_from_cache(&mut self.parameter_cache);
         let peaks = dist.isotopic_variants(charge, charge_carrier);
