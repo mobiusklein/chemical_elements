@@ -133,7 +133,7 @@ impl PolynomialParameters {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct PhiConstants<'a> {
     pub order: i32,
     pub element: &'a Element,
@@ -158,7 +158,7 @@ impl<'a> PhiConstants<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct IsotopicConstants<'lifespan, 'outer: 'lifespan> {
     pub constants: HashMap<&'lifespan str, PhiConstants<'outer>>,
     pub order: i32,
@@ -234,6 +234,7 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan, 'outer> {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct IsotopicConstantsCache<'lifespan> {
     pub cache: HashMap<&'lifespan str, PhiConstants<'lifespan>>,
 }
@@ -579,6 +580,7 @@ pub fn isotopic_variants<'a>(
     dist.isotopic_variants(charge, charge_carrier)
 }
 
+#[derive(Debug, Clone)]
 pub struct BafflingRecursiveIsotopicPatternGenerator<'lifespan> {
     parameter_cache: IsotopicConstantsCache<'lifespan>,
 }
