@@ -100,6 +100,15 @@ impl TheoreticalIsotopicPattern {
     }
 
     #[inline]
+    pub fn shift(mut self, offset: f64) -> TheoreticalIsotopicPattern {
+        self.origin += offset;
+        for peak in &mut self {
+            peak.mz += offset;
+        }
+        self
+    }
+
+    #[inline]
     pub fn clone_shifted(&self, offset: f64) -> TheoreticalIsotopicPattern {
         let n = self.len();
         let mut peaks = PeakList::with_capacity(n);
@@ -187,7 +196,16 @@ impl<'a> IntoIterator for &'a TheoreticalIsotopicPattern {
     type IntoIter = TheoreticalIsotopicPatternIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        return Self::IntoIter::new(self);
+        Self::IntoIter::new(self)
+    }
+}
+
+impl<'a> IntoIterator for &'a mut TheoreticalIsotopicPattern {
+    type Item = &'a mut Peak;
+    type IntoIter = TheoreticalIsotopicPatternIterMut<'a>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        Self::IntoIter::new(self)
     }
 }
 
@@ -215,6 +233,28 @@ impl<'a> TheoreticalIsotopicPatternIter<'a> {
 
 impl<'a> Iterator for TheoreticalIsotopicPatternIter<'a> {
     type Item = &'a Peak;
+
+    #[inline]
+    fn next(&mut self) -> Option<Self::Item> {
+        return self.iter.next();
+    }
+}
+
+
+pub struct TheoreticalIsotopicPatternIterMut<'a> {
+    iter: std::slice::IterMut<'a, Peak>,
+}
+
+impl<'a> TheoreticalIsotopicPatternIterMut<'a> {
+    fn new(peaks: &'a mut TheoreticalIsotopicPattern) -> TheoreticalIsotopicPatternIterMut<'a> {
+        return TheoreticalIsotopicPatternIterMut {
+            iter: peaks.peaks.iter_mut(),
+        };
+    }
+}
+
+impl<'a> Iterator for TheoreticalIsotopicPatternIterMut<'a> {
+    type Item = &'a mut Peak;
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
