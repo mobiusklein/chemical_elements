@@ -64,6 +64,35 @@ impl Peak {
     }
 }
 
+#[cfg(feature = "mzpeaks")]
+mod mzpeaks_interface {
+    use super::*;
+    use mzpeaks;
+
+
+    impl mzpeaks::CoordinateLike<mzpeaks::MZ> for Peak {
+        #[inline]
+        fn coordinate(&self) -> f64 {
+            self.mz
+        }
+    }
+
+    impl mzpeaks::IntensityMeasurement for Peak {
+        #[inline]
+        fn intensity(&self) -> f32 {
+            self.intensity()
+        }
+    }
+
+    impl mzpeaks::IndexedCoordinate<mzpeaks::MZ> for Peak {
+        fn get_index(&self) -> mzpeaks::IndexType {
+            0
+        }
+
+        fn set_index(&mut self, _index: mzpeaks::IndexType) {}
+    }
+}
+
 pub type PeakList = Vec<Peak>;
 
 #[derive(Debug, Clone)]
