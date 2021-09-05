@@ -4,10 +4,10 @@ version = "0.1.0"
 edition = "2018"
 
 license = "Apache-2.0"
-repository = "https://github.com/mobiusklein/chemical_composition"
+repository = "https://github.com/mobiusklein/chemical_elements"
 
 description = "A library for representing chemical compositions and generating isotopic patterns"
-documentation = "https://docs.rs/chemical_composition"
+documentation = "https://docs.rs/chemical_elements"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
