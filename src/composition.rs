@@ -1,11 +1,12 @@
+use std::borrow::Borrow;
 use std::cmp;
 use std::collections::hash_map::{HashMap, Iter};
 use std::convert;
 use std::convert::TryFrom;
-use std::fmt;
+use std::fmt::{self, Display};
 use std::hash;
 use std::iter::FromIterator;
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Sub, SubAssign, Neg};
+use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::str::FromStr;
 
 use crate::element::{Element, PeriodicTable};
@@ -15,6 +16,35 @@ use crate::table::PERIODIC_TABLE;
 #[derive(Debug, Clone, Copy)]
 pub enum ElementSpecificationParsingError {
     UnclosedIsotope,
+    UnknownElement,
+}
+
+impl Display for ElementSpecificationParsingError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl std::error::Error for ElementSpecificationParsingError {}
+
+/// Classify a string as being an element specification
+enum ElementSpecificationLike {
+    /// Definitely an element specification, does not have an isotope
+    Yes,
+    /// Definitely not an element specification-like string
+    No,
+    /// Could be an element specification, looks element-like with an isotope
+    Maybe,
+}
+
+impl From<bool> for ElementSpecificationLike {
+    fn from(x: bool) -> Self {
+        if x {
+            ElementSpecificationLike::Yes
+        } else {
+            ElementSpecificationLike::No
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -38,6 +68,13 @@ impl<'a> cmp::PartialEq for ElementSpecification<'a> {
     }
 }
 
+impl<'a> cmp::PartialEq<str> for ElementSpecification<'a> {
+    #[inline]
+    fn eq(&self, other: &str) -> bool {
+        self.element.symbol == other && self.isotope == 0
+    }
+}
+
 impl<'a> cmp::Eq for ElementSpecification<'a> {}
 
 impl<'element> hash::Hash for ElementSpecification<'element> {
@@ -47,16 +84,18 @@ impl<'element> hash::Hash for ElementSpecification<'element> {
     }
 }
 
+impl<'a> Borrow<str> for ElementSpecification<'a> {
+    fn borrow(&self) -> &str {
+        &self.element.symbol
+    }
+}
+
 impl<'element> fmt::Display for ElementSpecification<'element> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.isotope == 0 {
             f.write_str(&self.element.symbol)
         } else {
-            write!(
-                f,
-                "{}[{}]",
-                self.element.symbol, self.isotope
-            )
+            write!(f, "{}[{}]", self.element.symbol, self.isotope)
         }
     }
 }
@@ -82,6 +121,37 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
         Self::parse_with(string, &PERIODIC_TABLE)
     }
 
+    fn quick_check_str(string: &str) -> ElementSpecificationLike {
+        let n = string.len();
+        let mut chars = string.chars();
+        if n == 0 {
+            ElementSpecificationLike::No
+        } else if n == 1 {
+            let first = chars.nth(0).unwrap();
+            (first.is_alphabetic()).into()
+        }
+        // The one or two letter scenario, most common
+        else if n < 3 {
+            let first = chars.nth(0).unwrap();
+            let last = chars.last().unwrap();
+            (last != '[' && last != ']' && first.is_alphabetic()).into()
+        } else if n == 4 {
+            let first = chars.nth(0).unwrap();
+            let last = chars.last().unwrap();
+            if first.is_alphabetic() {
+                if last == ']' {
+                    ElementSpecificationLike::Maybe
+                } else {
+                    ElementSpecificationLike::No
+                }
+            } else {
+                ElementSpecificationLike::No
+            }
+        } else {
+            ElementSpecificationLike::Maybe
+        }
+    }
+
     #[inline]
     pub fn parse_with(
         string: &'transient str,
@@ -105,13 +175,16 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
             }
         }
         let elt_sym = &string[elt_start..elt_end];
-        let element = &periodic_table[elt_sym];
-        let isotope = if iso_start != iso_end {
-            string[iso_start..iso_end].parse::<u16>().unwrap()
+        if let Some(element) = periodic_table.get(elt_sym) {
+            let isotope = if iso_start != iso_end {
+                string[iso_start..iso_end].parse::<u16>().unwrap()
+            } else {
+                0
+            };
+            Ok(ElementSpecification::new(element, isotope))
         } else {
-            0
-        };
-        return Ok(ElementSpecification::new(element, isotope));
+            Err(ElementSpecificationParsingError::UnknownElement)
+        }
     }
 }
 
@@ -150,6 +223,7 @@ pub struct ChemicalComposition<'a> {
 }
 
 impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
+    /// Create a new, empty [`ChemicalComposition`]
     pub fn new() -> ChemicalComposition<'lifespan> {
         ChemicalComposition {
             ..Default::default()
@@ -157,8 +231,10 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     }
 
     #[inline]
-    /// Explicitly calculate the mass of the chemical composition, ignoring
-    /// any caching.
+    /**
+    Explicitly calculate the mass of the chemical composition, ignoring
+    any caching.
+    */
     pub fn calc_mass(&self) -> f64 {
         let mut total = 0.0;
         for (elt_spec, count) in &self.composition {
@@ -258,20 +334,43 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         self.composition.len()
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-
     #[inline]
-    /// Parse a text formula into a [`ChemicalComposition`] using the
-    /// global element table
+    pub fn is_empty(&self) -> bool {
+        self.composition.is_empty()
+    }
+}
+
+/**
+# Formula String Parsing
+
+The formula notation supports fixed isotopes following elements enclosed in `[]`
+and parenthesized groups enclosed in `()`.
+*/
+impl<'lifespan> ChemicalComposition<'lifespan> {
+    #[inline]
+    /**
+    Parse a text formula into a [`ChemicalComposition`] using the
+    global [`PeriodicTable`].
+
+    If the formula fails to parse, a [`FormulaParserError`] is returned.
+
+    ```rust
+    # use chemical_elements::ChemicalComposition;
+    let hexose = ChemicalComposition::parse("C6O6(H2)6").unwrap();
+    assert_eq!(hexose["C"], 6);
+    assert_eq!(hexose["O"], 6);
+    assert_eq!(hexose["H"], 12);
+    ```
+    */
     pub fn parse(string: &str) -> Result<ChemicalComposition, FormulaParserError> {
         parse_formula(string)
     }
 
     #[inline]
-    /// Parse a text formula into a [`ChemicalComposition`], using the specified
-    /// element table
+    /**
+    Parse a text formula into a [`ChemicalComposition`], using the specified
+    [`PeriodicTable`], otherwise behaving identically to [`ChemicalComposition::parse`].
+    */
     pub fn parse_with(
         string: &str,
         periodic_table: &'lifespan PeriodicTable,
@@ -290,21 +389,6 @@ impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalComposition<
     }
 }
 
-const ZERO: i32 = 0;
-
-impl<'lifespan> Index<&str> for ChemicalComposition<'lifespan> {
-    type Output = i32;
-
-    #[inline]
-    fn index(&self, key: &str) -> &Self::Output {
-        let spec = ElementSpecification::try_from(key);
-        match spec {
-            Ok(spec) => self.composition.get(&spec).unwrap(),
-            Err(_err) => &ZERO,
-        }
-    }
-}
-
 impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {
     #[inline]
     fn index_mut(&mut self, key: &ElementSpecification<'lifespan>) -> &mut Self::Output {
@@ -314,7 +398,106 @@ impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalCompositi
     }
 }
 
+/**
+# String-based accessors
+
+When performing routine manipulations of a [`ChemicalComposition`] it may
+be both more efficient and easier to write those operations using strings
+or string literals, rather than instantiating an [`ElementSpecification`]
+for each operation. These methods take advantage of the way
+[`HashMap::get`](std::collections::HashMap::get) is parameterized to avoid
+constructing a new [`ElementSpecification`] unless absolutely necessary.
+*/
+impl<'a> ChemicalComposition<'a> {
+    /// Get the quantity of an element by its symbol string.
+    ///
+    /// This method does not support fixed isotopes, but may
+    /// be faster as it skips element specification parsing and
+    /// [`PeriodicTable`] lookup.
+    pub fn get_str(&self, elt: &str) -> i32 {
+        match self.composition.get(elt) {
+            Some(c) => *c,
+            None => 0,
+        }
+    }
+
+    /**
+    Get a mutable reference of quantity of an element by its symbol string,
+    if it exists. This method invalidates the mass cache.
+
+    This method does not support fixed isotopes, but may
+    be faster as it skips element specification parsing and
+    [`PeriodicTable`] lookup.
+
+    # Note
+    While the borrow checker should stop you from mutating the object
+    while the borrowed count is still alive, unsafe use may allow the
+    [`ChemicalComposition.mass_cache`] to get out of sync with updates
+    to element counts.
+    */
+    pub fn get_str_mut(&mut self, elt: &str) -> Option<&mut i32> {
+        self.mass_cache = None;
+        self.composition.get_mut(elt)
+    }
+
+    /// Increment of quantity of an element by its symbol string,
+    /// if it exists. This method invalidates the mass cache.
+    ///
+    /// This method does not support fixed isotopes, but may
+    /// be faster as it skips element specification parsing and
+    /// [`PeriodicTable`] lookup, if the element is already in
+    /// the composition. Otherwise, the string is parsed and a new
+    /// [`ElementSpecification`] is created using the default [`PeriodicTable`].
+    ///
+    /// # Panics
+    /// If a new [`ElementSpecification`] needs to be created and fails,
+    /// this method will panic.
+    pub fn inc_str(&mut self, elt: &str, count: i32) {
+        self.mass_cache = None;
+        if let Some(val) = self.get_str_mut(elt) {
+            *val += count;
+        } else {
+            match ElementSpecification::parse(elt) {
+                Ok(spec) => self.inc(spec, count),
+                Err(err) => {
+                    panic!("Failed to parse element specification {} while incrementing composition: {:?}", elt, err)
+                }
+            }
+        }
+    }
+}
+
+const ZERO: i32 = 0;
+
+impl<'lifespan> Index<&str> for ChemicalComposition<'lifespan> {
+    type Output = i32;
+
+    /**
+    Using the [`Index`] trait to access element counts with a [`&str`] is more
+    flexible than [`ChemicalComposition::get_str`], supporting fixed
+    isotope strings, but does slightly more string checking up-front.
+    */
+    #[inline]
+    fn index(&self, key: &str) -> &Self::Output {
+        match ElementSpecification::quick_check_str(key) {
+            ElementSpecificationLike::Yes => self.composition.get(key).unwrap(),
+            ElementSpecificationLike::No => &ZERO,
+            ElementSpecificationLike::Maybe => {
+                let spec = ElementSpecification::try_from(key);
+                match spec {
+                    Ok(spec) => self.composition.get(&spec).unwrap(),
+                    Err(_err) => &ZERO,
+                }
+            }
+        }
+    }
+}
+
 impl<'lifespan> IndexMut<&str> for ChemicalComposition<'lifespan> {
+    /** Using [`IndexMut`] with a [`&str`] will always construct a new
+    [`ElementSpecification`] from the provided `&str`, in order to
+    maintain the contract with with [`std::ops::Index`]
+    */
     #[inline]
     fn index_mut(&mut self, key: &str) -> &mut Self::Output {
         self.mass_cache = None;
@@ -428,7 +611,6 @@ impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalComposition<'lif
 }
 
 impl<'lifespan> convert::From<Vec<(&'lifespan str, i32)>> for ChemicalComposition<'lifespan> {
-
     #[inline]
     fn from(elements: Vec<(&'lifespan str, i32)>) -> Self {
         let composition: ChemicalComposition<'lifespan> = elements.iter().cloned().collect();

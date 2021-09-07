@@ -5,9 +5,14 @@ use std::ops;
 use crate::mz::{neutral_mass, PROTON};
 
 #[derive(Debug, Clone, Default)]
+/**A theoretical peak for an isotopic pattern */
 pub struct Peak {
+    /// The m/z of the isotopic peak
     pub mz: f64,
+    /// The theoretical abundance of the isotopic peak, usually expressed as a
+    /// percentage of total signal, unless scaled.
     pub intensity: f64,
+    /// The charge state of the isotopic peak
     pub charge: i32,
 }
 
@@ -68,7 +73,6 @@ impl Peak {
 mod mzpeaks_interface {
     use super::*;
     use mzpeaks;
-
 
     impl mzpeaks::CoordinateLike<mzpeaks::MZ> for Peak {
         #[inline]
@@ -229,15 +233,15 @@ impl TheoreticalIsotopicPattern {
 
 impl fmt::Display for TheoreticalIsotopicPattern {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "TheoreticalIsotopicPattern([").expect("Write failed");
+        write!(f, "TheoreticalIsotopicPattern([")?;
         let n = self.len() - 1;
         for (i, peak) in self.into_iter().enumerate() {
-            write!(f, "{}", peak).expect("Write failed");
+            write!(f, "{}", peak)?;
             if i != n {
-                write!(f, ", ").expect("Write failed");
+                write!(f, ", ")?;
             }
         }
-        write!(f, "])").expect("Write failed");
+        write!(f, "])")?;
         return Ok(());
     }
 }
@@ -281,25 +285,23 @@ impl PartialEq for TheoreticalIsotopicPattern {
     fn eq(&self, other: &Self) -> bool {
         for (a, b) in self.iter().zip(other.iter()) {
             if a != b {
-                return false
+                return false;
             }
         }
         true
     }
 }
-
 
 impl PartialEq<[Peak]> for TheoreticalIsotopicPattern {
     fn eq(&self, other: &[Peak]) -> bool {
         for (a, b) in self.iter().zip(other.iter()) {
             if a != b {
-                return false
+                return false;
             }
         }
         true
     }
 }
-
 
 impl Eq for TheoreticalIsotopicPattern {}
 
@@ -325,7 +327,6 @@ impl<'a> Iterator for TheoreticalIsotopicPatternIter<'a> {
         return self.iter.next();
     }
 }
-
 
 pub struct TheoreticalIsotopicPatternIterMut<'a> {
     iter: std::slice::IterMut<'a, Peak>,

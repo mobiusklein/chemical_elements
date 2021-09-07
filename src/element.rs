@@ -167,6 +167,10 @@ impl PeriodicTable {
     pub fn add(&mut self, element: Element) {
         self.elements.insert(element.symbol.clone(), element);
     }
+
+    pub fn get(&self, symbol: &str) -> Option<&Element> {
+        self.elements.get(symbol)
+    }
 }
 
 impl ops::Index<&String> for PeriodicTable {

@@ -450,7 +450,11 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
         }
     }
 
-    pub fn phi_values_mass(&self, element: &'lifespan ElementSpecification, accumulator: &mut DVec) {
+    pub fn phi_values_mass(
+        &self,
+        element: &'lifespan ElementSpecification,
+        accumulator: &mut DVec,
+    ) {
         accumulator.push(0.0);
         for i in 1..(self.order as usize) + 1 {
             accumulator.push(self.phi_mass_for(element, i));
@@ -559,7 +563,6 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
     }
 }
 
-
 /// Generate a coarse isotopic pattern from a [`ChemicalComposition`]
 /// with the specified peak count and charge state.
 ///
@@ -585,7 +588,9 @@ pub struct BafflingRecursiveIsotopicPatternGenerator<'lifespan> {
     parameter_cache: IsotopicConstantsCache<'lifespan>,
 }
 
-impl<'transient, 'lifespan: 'transient, 'outer: 'lifespan> BafflingRecursiveIsotopicPatternGenerator<'lifespan> {
+impl<'transient, 'lifespan: 'transient, 'outer: 'lifespan>
+    BafflingRecursiveIsotopicPatternGenerator<'lifespan>
+{
     pub fn new() -> BafflingRecursiveIsotopicPatternGenerator<'lifespan> {
         BafflingRecursiveIsotopicPatternGenerator {
             parameter_cache: IsotopicConstantsCache::new(),

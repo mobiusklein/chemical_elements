@@ -3,6 +3,7 @@ use crate::ChemicalComposition;
 use crate::ElementSpecification;
 use crate::{Element, PeriodicTable};
 
+use std::fmt::Display;
 use std::num::ParseIntError;
 
 #[derive(Debug)]
@@ -32,6 +33,14 @@ pub enum FormulaParserError {
     IncompleteFormula,
     InvalidElement,
 }
+
+impl Display for FormulaParserError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
+impl std::error::Error for FormulaParserError {}
 
 #[derive(Default)]
 pub struct FormulaParser {

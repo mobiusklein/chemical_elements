@@ -1,5 +1,5 @@
-use chemical_elements::{ChemicalComposition, PROTON};
 use chemical_elements::isotopic_pattern::isotopic_variants;
+use chemical_elements::{ChemicalComposition, PROTON};
 use std::env;
 
 fn main() {
@@ -12,5 +12,4 @@ fn main() {
     for p in dist {
         println!("{}\t{}", p.neutral_mass(), p.intensity());
     }
-
 }
