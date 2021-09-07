@@ -219,60 +219,18 @@ and multiplication by integers.
 */
 pub struct ChemicalComposition<'a> {
     pub composition: HashMap<ElementSpecification<'a>, i32>,
-    pub mass_cache: Option<f64>,
+    mass_cache: Option<f64>,
 }
 
-impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
+/**
+# Basic Operations
+*/
+impl<'lifespan> ChemicalComposition<'lifespan> {
     /// Create a new, empty [`ChemicalComposition`]
     pub fn new() -> ChemicalComposition<'lifespan> {
         ChemicalComposition {
             ..Default::default()
         }
-    }
-
-    #[inline]
-    /**
-    Explicitly calculate the mass of the chemical composition, ignoring
-    any caching.
-    */
-    pub fn calc_mass(&self) -> f64 {
-        let mut total = 0.0;
-        for (elt_spec, count) in &self.composition {
-            let element = elt_spec.element;
-            total += if elt_spec.isotope == 0 {
-                element.most_abundant_mass
-            } else {
-                element.isotopes[&elt_spec.isotope].mass
-            } * (*count as f64);
-        }
-        return total;
-    }
-
-    #[inline]
-    /// Get the mass of this chemical composition. If the mass cache
-    /// has been populated, return that instead of repeating the calculation.
-    pub fn mass(&self) -> f64 {
-        let mass = match self.mass_cache {
-            None => self.calc_mass(),
-            Some(val) => val,
-        };
-        return mass;
-    }
-
-    #[inline]
-    /// Get the mass of this chemical composition, and cache it,
-    /// or reuse the cached value. This requires mutability, so this method
-    /// must be called explicitly.
-    pub fn fmass(&mut self) -> f64 {
-        let mass = match self.mass_cache {
-            None => {
-                let total = self.mass();
-                self.mass_cache = Some(total);
-                total
-            }
-            Some(val) => val,
-        };
-        return mass;
     }
 
     #[inline]
@@ -305,6 +263,107 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
         return (self.composition).iter();
     }
 
+/**
+# Mass calculation Methods
+
+[`ChemicalComposition`] has three methods for computing the monoisotopic
+mass of the composition it represents to handle mutability.
+*/
+
+    #[inline]
+    /**
+    Explicitly calculate the mass of the chemical composition, ignoring
+    any caching.
+    */
+    pub fn calc_mass(&self) -> f64 {
+        let mut total = 0.0;
+        for (elt_spec, count) in &self.composition {
+            let element = elt_spec.element;
+            total += if elt_spec.isotope == 0 {
+                element.most_abundant_mass
+            } else {
+                element.isotopes[&elt_spec.isotope].mass
+            } * (*count as f64);
+        }
+        return total;
+    }
+
+    #[inline]
+    /**
+    Get the mass of this chemical composition. If the mass cache
+    has been populated, return that instead of repeating the calculation.
+    */
+    pub fn mass(&self) -> f64 {
+        let mass = match self.mass_cache {
+            None => self.calc_mass(),
+            Some(val) => val,
+        };
+        return mass;
+    }
+
+    #[inline]
+    /**
+    Get the mass of this chemical composition, and cache it,
+    or reuse the cached value. This requires mutability, so this method
+    must be called explicitly.
+    */
+    pub fn fmass(&mut self) -> f64 {
+        let mass = match self.mass_cache {
+            None => {
+                let total = self.mass();
+                self.mass_cache = Some(total);
+                total
+            }
+            Some(val) => val,
+        };
+        return mass;
+    }
+
+    #[inline]
+    /// Test if the mass cache is populated.
+    pub fn has_mass_cached(&self) -> bool {
+        self.mass_cache.is_some()
+    }
+
+/**
+# Formula String Parsing
+
+The formula notation supports fixed isotopes following elements enclosed in `[]`
+and parenthesized groups enclosed in `()`.
+
+Parse a text formula into a [`ChemicalComposition`] using the
+global [`PeriodicTable`].
+
+If the formula fails to parse, a [`FormulaParserError`] is returned.
+
+```rust
+# use chemical_elements::ChemicalComposition;
+let hexose = ChemicalComposition::parse("C6O6(H2)6").unwrap();
+assert_eq!(hexose["C"], 6);
+assert_eq!(hexose["O"], 6);
+assert_eq!(hexose["H"], 12);
+```
+*/
+    #[inline]
+    pub fn parse(string: &str) -> Result<ChemicalComposition, FormulaParserError> {
+        parse_formula(string)
+    }
+
+    #[inline]
+    /**
+    Parse a text formula into a [`ChemicalComposition`], using the specified
+    [`PeriodicTable`], otherwise behaving identically to [`ChemicalComposition::parse`].
+    */
+    pub fn parse_with(
+        string: &str,
+        periodic_table: &'lifespan PeriodicTable,
+    ) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
+        parse_formula_with_table(string, periodic_table)
+    }
+}
+
+
+impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     #[inline]
     fn _add_from(&'outer mut self, other: &'transient ChemicalComposition<'lifespan>) {
         for (key, val) in other.composition.iter() {
@@ -340,44 +399,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     }
 }
 
-/**
-# Formula String Parsing
 
-The formula notation supports fixed isotopes following elements enclosed in `[]`
-and parenthesized groups enclosed in `()`.
-*/
-impl<'lifespan> ChemicalComposition<'lifespan> {
-    #[inline]
-    /**
-    Parse a text formula into a [`ChemicalComposition`] using the
-    global [`PeriodicTable`].
-
-    If the formula fails to parse, a [`FormulaParserError`] is returned.
-
-    ```rust
-    # use chemical_elements::ChemicalComposition;
-    let hexose = ChemicalComposition::parse("C6O6(H2)6").unwrap();
-    assert_eq!(hexose["C"], 6);
-    assert_eq!(hexose["O"], 6);
-    assert_eq!(hexose["H"], 12);
-    ```
-    */
-    pub fn parse(string: &str) -> Result<ChemicalComposition, FormulaParserError> {
-        parse_formula(string)
-    }
-
-    #[inline]
-    /**
-    Parse a text formula into a [`ChemicalComposition`], using the specified
-    [`PeriodicTable`], otherwise behaving identically to [`ChemicalComposition::parse`].
-    */
-    pub fn parse_with(
-        string: &str,
-        periodic_table: &'lifespan PeriodicTable,
-    ) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
-        parse_formula_with_table(string, periodic_table)
-    }
-}
 
 impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {
     type Output = i32;
