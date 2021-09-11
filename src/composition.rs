@@ -569,10 +569,17 @@ impl<'lifespan> Mul<i32> for &ChemicalComposition<'lifespan> {
     }
 }
 
-impl<'lifespan> AddAssign<&ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+impl<'lifespan> AddAssign<&'_ ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
     #[inline]
     fn add_assign(&mut self, other: &ChemicalComposition<'lifespan>) {
         self._add_from(other);
+    }
+}
+
+impl<'lifespan> AddAssign<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+    #[inline]
+    fn add_assign(&mut self, other: ChemicalComposition<'lifespan>) {
+        self._add_from(&other);
     }
 }
 
@@ -582,6 +589,14 @@ impl<'lifespan> SubAssign<&'_ ChemicalComposition<'lifespan>> for ChemicalCompos
         self._sub_from(other);
     }
 }
+
+impl<'lifespan> SubAssign<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+    #[inline]
+    fn sub_assign(&mut self, other: ChemicalComposition<'lifespan>) {
+        self._sub_from(&other);
+    }
+}
+
 
 impl<'lifespan> MulAssign<i32> for ChemicalComposition<'_> {
     #[inline]
