@@ -11,7 +11,7 @@ let mut composition = ChemicalComposition::parse("H2O")?;
 composition["C"] = 6;
 composition["O"] = 6;
 composition["H"] = 12;
-assert!((composition.mass() - 180.06339).abs() < 1e-6)
+assert!((composition.mass() - 180.06339).abs() < 1e-6);
 # Ok(())
 # }
 ```
