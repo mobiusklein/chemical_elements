@@ -263,6 +263,13 @@ impl<'lifespan> ChemicalComposition<'lifespan> {
         return (self.composition).iter();
     }
 
+    /**
+    Return [`self.composition`], consuming the object
+    */
+    pub fn into_inner(self) -> HashMap<ElementSpecification<'lifespan>, i32> {
+        self.composition
+    }
+
 /**
 # Mass calculation Methods
 
@@ -362,7 +369,8 @@ assert_eq!(hexose["H"], 12);
     }
 }
 
-
+/**
+*/
 impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     #[inline]
     fn _add_from(&'outer mut self, other: &'transient ChemicalComposition<'lifespan>) {
@@ -602,6 +610,16 @@ impl<'lifespan> MulAssign<i32> for ChemicalComposition<'_> {
     #[inline]
     fn mul_assign(&mut self, other: i32) {
         self._mul_by(other);
+    }
+}
+
+impl<'lifespan> Neg for ChemicalComposition<'lifespan> {
+    type Output = ChemicalComposition<'lifespan>;
+
+    #[inline]
+    fn neg(mut self) -> Self::Output {
+        self._mul_by(-1);
+        self
     }
 }
 
