@@ -9,6 +9,11 @@ use std::iter::FromIterator;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::str::FromStr;
 
+use ahash::RandomState;
+
+#[cfg(feature = "serde1")]
+use serde::{Serialize, Deserialize};
+
 use crate::element::{Element, PeriodicTable};
 use crate::formula::{parse_formula, parse_formula_with_table, FormulaParserError};
 use crate::table::PERIODIC_TABLE;
@@ -47,13 +52,39 @@ impl From<bool> for ElementSpecificationLike {
     }
 }
 
+#[cfg(feature="serde1")]
+mod serialize_element_ref {
+    use serde::{Deserializer, Serializer, Deserialize};
+
+    use crate::Element;
+    use crate::table::PERIODIC_TABLE;
+
+    pub fn serialize<S>(val: &&Element, serializer: S) -> Result<S::Ok, S::Error>  where S: Serializer {
+        serializer.serialize_str(&val.symbol)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<&'static Element, D::Error> where D: Deserializer<'de> {
+        match String::deserialize(deserializer) {
+            Ok(symbol) => {
+                Ok(&PERIODIC_TABLE[&symbol])
+            },
+            Err(err) => {
+                Err(err)
+            }
+        }
+
+    }
+}
+
 #[derive(Debug, Clone)]
+#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
 /// A hashable key referencing an element with a specific isotope
 /// state. `element` is the [`Element`](crate::Element) represented, and `isotope` is
 /// the isotope number, though 0 means monoisotopic.
 ///
 /// Meant to be used as the keys for [`ChemicalComposition`]
 pub struct ElementSpecification<'element> {
+    #[cfg_attr(feature="serde1", serde(with="serialize_element_ref"))]
     pub element: &'element Element,
     pub isotope: u16,
 }
@@ -211,6 +242,7 @@ impl<'a> FromStr for ElementSpecification<'a> {
 }
 
 #[derive(Debug, Clone, Default)]
+#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
 /**
 Represents a collection of element-count pairs as found in a flat
 chemical formula. Built atop [`std::collections::HashMap`], and
@@ -218,7 +250,7 @@ support addition and subtraction with other instances of the same type
 and multiplication by integers.
 */
 pub struct ChemicalComposition<'a> {
-    pub composition: HashMap<ElementSpecification<'a>, i32>,
+    pub composition: HashMap<ElementSpecification<'a>, i32, RandomState>,
     mass_cache: Option<f64>,
 }
 
@@ -266,7 +298,7 @@ impl<'lifespan> ChemicalComposition<'lifespan> {
     /**
     Return [`self.composition`], consuming the object
     */
-    pub fn into_inner(self) -> HashMap<ElementSpecification<'lifespan>, i32> {
+    pub fn into_inner(self) -> HashMap<ElementSpecification<'lifespan>, i32, RandomState> {
         self.composition
     }
 

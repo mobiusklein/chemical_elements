@@ -8,6 +8,8 @@ use crate::element::Element;
 use crate::isotopic_pattern::{Peak, PeakList};
 use crate::{mass_charge_ratio, ChemicalComposition, ElementSpecification};
 
+use ahash::RandomState;
+
 pub type DVec = Vec<f64>;
 
 #[derive(Debug, Clone)]
@@ -160,14 +162,14 @@ impl<'a> PhiConstants<'a> {
 
 #[derive(Debug, Clone)]
 pub struct IsotopicConstants<'lifespan, 'outer: 'lifespan> {
-    pub constants: HashMap<&'lifespan str, PhiConstants<'outer>>,
+    pub constants: HashMap<&'lifespan str, PhiConstants<'outer>, RandomState>,
     pub order: i32,
 }
 
 impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan, 'outer> {
     pub fn new(size: usize) -> IsotopicConstants<'lifespan, 'outer> {
         IsotopicConstants {
-            constants: HashMap::with_capacity(size),
+            constants: HashMap::with_capacity_and_hasher(size, RandomState::new()),
             order: 0,
         }
     }
@@ -236,13 +238,13 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan, 'outer> {
 
 #[derive(Debug, Clone)]
 pub struct IsotopicConstantsCache<'lifespan> {
-    pub cache: HashMap<&'lifespan str, PhiConstants<'lifespan>>,
+    pub cache: HashMap<&'lifespan str, PhiConstants<'lifespan>, RandomState>,
 }
 
 impl<'lifespan, 'outer: 'lifespan> IsotopicConstantsCache<'lifespan> {
     pub fn new() -> IsotopicConstantsCache<'lifespan> {
         return IsotopicConstantsCache {
-            cache: HashMap::with_capacity(6),
+            cache: HashMap::with_capacity_and_hasher(6, RandomState::new()),
         };
     }
 
@@ -291,13 +293,13 @@ pub fn guess_npeaks(composition: &ChemicalComposition, max_npeaks: i32) -> i32 {
 }
 
 struct ElementPolynomialMap<'a> {
-    pub polynomials: HashMap<&'a str, DVec>,
+    pub polynomials: HashMap<&'a str, DVec, RandomState>,
 }
 
 impl<'a> ElementPolynomialMap<'a> {
     pub fn new(size: usize) -> ElementPolynomialMap<'a> {
         ElementPolynomialMap {
-            polynomials: HashMap::with_capacity(size),
+            polynomials: HashMap::with_capacity_and_hasher(size, RandomState::new()),
         }
     }
 

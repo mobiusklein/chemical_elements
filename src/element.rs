@@ -4,7 +4,13 @@ use std::fmt;
 use std::hash;
 use std::ops;
 
+#[cfg(feature = "serde1")]
+use serde::{Serialize, Deserialize};
+
+use ahash::{RandomState};
+
 #[derive(Debug, Clone, Default)]
+#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
 /** A known isotope of an element with a known number of neutrons,
 mass, and relative abundance
 */
@@ -57,6 +63,7 @@ impl cmp::PartialOrd<Isotope> for Isotope {
 }
 
 #[derive(Debug, Clone, Default)]
+#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
 /** A chemical element with known masses and isotopic frequency.
 
 This type forms the foundation of the library, and is *usually*
@@ -64,7 +71,7 @@ treated like a singleton in a [`PeriodicTable`].
 */
 pub struct Element {
     pub symbol: String,
-    pub isotopes: HashMap<u16, Isotope>,
+    pub isotopes: HashMap<u16, Isotope, RandomState>,
     pub most_abundant_isotope: u16,
     pub most_abundant_mass: f64,
     pub min_neutron_shift: i8,
@@ -146,6 +153,7 @@ impl cmp::PartialEq<Element> for Element {
 }
 
 #[derive(Debug, Clone, Default)]
+#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
 /** A mapping connecting [`Element`] to its textual symbol.
 
 This type is referenced indirectly through all other structures
@@ -154,7 +162,7 @@ that depend upon [`Element`] or [`ChemicalComposition`](crate::ChemicalCompositi
 A global `lazy_static` constant is available as `PERIODIC_TABLE`.
 */
 pub struct PeriodicTable {
-    pub elements: HashMap<String, Element>,
+    pub elements: HashMap<String, Element, RandomState>,
 }
 
 impl PeriodicTable {

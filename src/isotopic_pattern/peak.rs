@@ -2,9 +2,13 @@ use std::cmp;
 use std::fmt;
 use std::ops;
 
+#[cfg(feature = "serde1")]
+use serde::{Serialize, Deserialize};
+
 use crate::mz::{neutral_mass, PROTON};
 
 #[derive(Debug, Clone, Default)]
+#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
 /**A theoretical peak for an isotopic pattern */
 pub struct Peak {
     /// The m/z of the isotopic peak
