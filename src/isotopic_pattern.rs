@@ -2,6 +2,7 @@
 
 pub mod baffling;
 pub mod peak;
+pub mod poisson;
 
 pub use crate::isotopic_pattern::baffling::{
     isotopic_variants, BafflingRecursiveIsotopicPatternGenerator,
