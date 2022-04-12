@@ -156,7 +156,7 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
         let n = string.len();
         let mut chars = string.chars();
         if n == 0 {
-            ElementSpecificationLike::No
+            return ElementSpecificationLike::No
         } else if n == 1 {
             let first = chars.nth(0).unwrap();
             (first.is_alphabetic()).into()
@@ -542,12 +542,14 @@ impl<'lifespan> Index<&str> for ChemicalComposition<'lifespan> {
     #[inline]
     fn index(&self, key: &str) -> &Self::Output {
         match ElementSpecification::quick_check_str(key) {
-            ElementSpecificationLike::Yes => self.composition.get(key).unwrap(),
+            ElementSpecificationLike::Yes => {
+                self.composition.get(key).unwrap_or(&ZERO)
+            },
             ElementSpecificationLike::No => &ZERO,
             ElementSpecificationLike::Maybe => {
                 let spec = ElementSpecification::try_from(key);
                 match spec {
-                    Ok(spec) => self.composition.get(&spec).unwrap(),
+                    Ok(spec) => self.composition.get(&spec).unwrap_or(&ZERO),
                     Err(_err) => &ZERO,
                 }
             }
