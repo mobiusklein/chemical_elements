@@ -1,7 +1,7 @@
 [package]
 name = "chemical_elements"
 version = "0.3.0"
-edition = "2018"
+edition = "2021"
 
 license = "Apache-2.0"
 repository = "https://github.com/mobiusklein/chemical_elements"
@@ -20,7 +20,7 @@ name = "chemical_elements"
 
 
 [features]
-default-features = ["mzpeaks", "serde1"]
+default = ["mzpeaks", "serde1"]
 
 serde1 = ["serde", "ahash/serde", ]
 

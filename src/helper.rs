@@ -40,7 +40,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalElements<'lifespan> {
             N: ElementSpecification::parse_with("N", &PERIODIC_TABLE).unwrap(),
             S: ElementSpecification::parse_with("S", &PERIODIC_TABLE).unwrap(),
             H2O: ChemicalComposition::parse_with("H2O", &PERIODIC_TABLE).unwrap(),
-            OH: -&ChemicalComposition::parse("OH").unwrap(),
+            OH: ChemicalComposition::parse("OH").unwrap(),
             NH2: ChemicalComposition::parse_with("NH2", &PERIODIC_TABLE).unwrap(),
         };
         ce
@@ -60,5 +60,18 @@ impl<'transient, 'lifespan: 'transient> ChemicalElements<'lifespan> {
         string: &'transient str,
     ) -> Result<ElementSpecification, ElementSpecificationParsingError> {
         ElementSpecification::parse_with(string, &self.periodic_table)
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_ce() {
+        let ce = ChemicalElements::new();
+        let c_elt = ce.parse_element("C").unwrap();
+        assert_eq!(ce.C, c_elt);
     }
 }
