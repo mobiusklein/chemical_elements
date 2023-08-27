@@ -257,7 +257,7 @@ pub struct ChemicalComposition<'a> {
 /**
 # Basic Operations
 */
-impl<'lifespan> ChemicalComposition<'lifespan> {
+impl<'transient, 'lifespan: 'transient> ChemicalComposition<'lifespan> {
     /// Create a new, empty [`ChemicalComposition`]
     pub fn new() -> ChemicalComposition<'lifespan> {
         ChemicalComposition {
@@ -384,7 +384,7 @@ assert_eq!(hexose["H"], 12);
 ```
 */
     #[inline]
-    pub fn parse(string: &str) -> Result<ChemicalComposition, FormulaParserError> {
+    pub fn parse(string: &'transient str) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
         parse_formula(string)
     }
 
@@ -414,8 +414,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     #[inline]
     fn _sub_from(&'outer mut self, other: &'transient ChemicalComposition<'lifespan>) {
         for (key, val) in other.composition.iter() {
-            let newkey: ElementSpecification<'lifespan> = key.clone();
-            self.inc(newkey, -(*val));
+            self.inc(key.clone(), -(*val));
         }
     }
 
@@ -796,6 +795,15 @@ mod test {
         let ctrl = ChemicalComposition::from(vec![("O", 2), ("H", 4)]);
 
         let combo = &case + &case;
+        assert_eq!(ctrl, combo);
+    }
+
+    #[test]
+    fn test_sub() {
+        let case = ChemicalComposition::from(vec![("O", 2), ("H", 4)]);
+        let ctrl = ChemicalComposition::from(vec![("O", 1), ("H", 2)]);
+
+        let combo = &case - &ctrl;
         assert_eq!(ctrl, combo);
     }
 

@@ -65,7 +65,7 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
     }
 
     pub fn parse_with_table(
-        string: &str,
+        string: &'transient str,
         periodic_table: &'lifespan PeriodicTable,
     ) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
         let mut parser = Self::default();
@@ -388,7 +388,7 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
     }
 }
 
-pub fn parse_formula(string: &str) -> Result<ChemicalComposition, FormulaParserError> {
+pub fn parse_formula<'transient, 'lifespan: 'transient>(string: &'transient str) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
     FormulaParser::parse(string)
 }
 

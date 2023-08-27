@@ -1,0 +1,18 @@
+[package]
+name = "pychemical_elements"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "pychemical_elements"
+crate-type = ["cdylib"]
+
+[features]
+
+serde1 = ["chemical_elements/serde1"]
+mzpeaks = ["chemical_elements/mzpeaks"]
+
+[dependencies]
+pyo3 = { version = "0.16.5", features = ["extension-module"] }
+chemical_elements = { path = "../../" }
