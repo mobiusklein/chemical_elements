@@ -1,15 +1,20 @@
-use pyo3::{prelude::*, exceptions::{PyValueError, PyTypeError}};
-use pyo3::types::{PyMapping, PyUnicode};
 use pyo3::ffi::PyMapping_Check;
+use pyo3::types::{PyMapping, PyUnicode};
+use pyo3::{
+    exceptions::{PyTypeError, PyValueError},
+    prelude::*,
+};
 
-use chemical_elements::{ChemicalComposition, PERIODIC_TABLE, parse_formula, ElementSpecification, PROTON};
 use chemical_elements::isotopic_pattern::baffling::IsotopicDistribution;
+use chemical_elements::{
+    isotopic_pattern::Peak, parse_formula, ChemicalComposition, ElementSpecification,
+    PERIODIC_TABLE, PROTON,
+};
 
-
-#[pyclass(module="pychemical_elements")]
+#[pyclass(module = "pychemical_elements", name = "ChemicalComposition", mapping)]
 #[derive(Default, Clone)]
 pub struct PyChemicalComposition {
-    inner: ChemicalComposition<'static>
+    inner: ChemicalComposition<'static>,
 }
 
 impl<'py> TryFrom<FormulaOrMapping<'py>> for PyChemicalComposition {
@@ -23,25 +28,23 @@ impl<'py> TryFrom<FormulaOrMapping<'py>> for PyChemicalComposition {
 pub enum FormulaOrMapping<'py> {
     Formula(String),
     Mapping(&'py PyMapping),
-    Composition(PyRef<'py, PyChemicalComposition>)
+    Composition(PyRef<'py, PyChemicalComposition>),
 }
-
 
 impl<'source> FromPyObject<'source> for FormulaOrMapping<'source> {
     fn extract(ob: &'source PyAny) -> PyResult<Self> {
         if ob.is_instance_of::<PyUnicode>()? {
             Ok(FormulaOrMapping::Formula(ob.extract::<String>()?))
-        }
-        else if ob.is_instance_of::<PyChemicalComposition>()? {
+        } else if ob.is_instance_of::<PyChemicalComposition>()? {
             let cob = ob.extract()?;
             Ok(FormulaOrMapping::Composition(cob))
-        }
-        else if unsafe {PyMapping_Check(ob.into_ptr()) == 1} && ob.hasattr("items")? {
+        } else if unsafe { PyMapping_Check(ob.into_ptr()) == 1 } && ob.hasattr("items")? {
             let cob = ob.cast_as::<PyMapping>()?;
             Ok(FormulaOrMapping::Mapping(cob))
-        }
-        else {
-            Err(PyTypeError::new_err("Failed to coerce object to formula or mapping"))
+        } else {
+            Err(PyTypeError::new_err(
+                "Failed to coerce object to formula or mapping",
+            ))
         }
     }
 }
@@ -58,7 +61,7 @@ impl<'py> FormulaOrMapping<'py> {
                     this.inc_str(elem_str, count);
                 }
                 Ok(PyChemicalComposition { inner: this })
-            },
+            }
             FormulaOrMapping::Formula(value) => {
                 if let Ok(inner) = parse_formula(&value) {
                     let mut this = ChemicalComposition::default();
@@ -79,7 +82,6 @@ impl<'py> FormulaOrMapping<'py> {
         }
     }
 }
-
 
 #[pymethods]
 impl PyChemicalComposition {
@@ -113,7 +115,9 @@ impl PyChemicalComposition {
     }
 
     pub fn copy(&self) -> Self {
-        Self { inner: self.inner.clone() }
+        Self {
+            inner: self.inner.clone(),
+        }
     }
 
     #[getter]
@@ -126,7 +130,9 @@ impl PyChemicalComposition {
     }
 
     fn __add__(&self, other: &Self) -> Self {
-        Self { inner: &self.inner + &other.inner }
+        Self {
+            inner: &self.inner + &other.inner,
+        }
     }
 
     fn __sub__(&self, other: &Self) -> Self {
@@ -140,7 +146,9 @@ impl PyChemicalComposition {
     }
 
     fn __mul__(&self, i: i32) -> Self {
-        Self { inner: &self.inner * i }
+        Self {
+            inner: &self.inner * i,
+        }
     }
 
     fn __imul__(&mut self, i: i32) {
@@ -152,28 +160,34 @@ impl PyChemicalComposition {
     }
 
     fn keys(&self) -> Vec<String> {
-        self.inner.iter().map(|(k, _)| { k.element.symbol.to_string() }).collect()
+        self.inner
+            .iter()
+            .map(|(k, _)| k.element.symbol.to_string())
+            .collect()
     }
 
     fn values(&self) -> Vec<i32> {
-        self.inner.iter().map(|(_, v)| { *v }).collect()
+        self.inner.iter().map(|(_, v)| *v).collect()
     }
 
     fn items(&self) -> Vec<(String, i32)> {
-        self.inner.iter().map(|(k, v)| { (k.element.symbol.to_string(), *v) }).collect()
+        self.inner
+            .iter()
+            .map(|(k, v)| (k.element.symbol.to_string(), *v))
+            .collect()
     }
 
     fn __iter__(slf: PyRef<'_, Self>) -> PyChemIter {
-        PyChemIter { inner: slf.keys().into_iter() }
+        PyChemIter {
+            inner: slf.keys().into_iter(),
+        }
     }
 }
 
-
-#[pyclass(module="pychemical_elements")]
+#[pyclass(module = "pychemical_elements")]
 struct PyChemIter {
     inner: std::vec::IntoIter<String>,
 }
-
 
 #[pymethods]
 impl PyChemIter {
@@ -186,21 +200,79 @@ impl PyChemIter {
     }
 }
 
+#[pyclass(module = "pychemical_elements", name = "Peak")]
+pub struct PyPeak(Peak);
 
+#[pymethods]
+impl PyPeak {
+    #[new]
+    fn new(mz: f64, intensity: f64, charge: i32) -> Self {
+        Self(Peak {
+            mz,
+            intensity,
+            charge,
+        })
+    }
 
-#[pyfunction(module="pychemical_elements")]
-fn pyisotopic_variants<'a>(mut composition: PyChemicalComposition, npeaks: i32, charge: i32) -> PyResult<Vec<f64>> {
+    #[getter]
+    fn get_mz(&self) -> f64 {
+        self.0.mz
+    }
+
+    #[setter]
+    fn set_mz(&mut self, value: f64) {
+        self.0.mz = value
+    }
+
+    #[getter]
+    fn get_intensity(&self) -> f64 {
+        self.0.intensity
+    }
+
+    #[setter]
+    fn set_intensity(&mut self, value: f64) {
+        self.0.intensity = value
+    }
+
+    #[getter]
+    fn get_charge(&self) -> i32 {
+        self.0.charge
+    }
+
+    #[setter]
+    fn set_charge(&mut self, value: i32) {
+        self.0.charge = value
+    }
+
+    fn __repr__(&self) -> String {
+        format!("{}", self.0)
+    }
+}
+
+impl From<Peak> for PyPeak {
+    fn from(value: Peak) -> Self {
+        Self(value)
+    }
+}
+
+#[pyfunction(module = "pychemical_elements")]
+fn isotopic_variants<'a>(
+    mut composition: PyChemicalComposition,
+    npeaks: i32,
+    charge: i32,
+) -> PyResult<Vec<PyPeak>> {
     let inner = composition.inner;
     let dist = IsotopicDistribution::from_composition(inner, npeaks - 1);
     let isotopic_peaks = dist.isotopic_variants(charge, PROTON);
     composition.inner = dist.composition;
-    Ok(isotopic_peaks.iter().map(|p| p.intensity).collect())
+    Ok(isotopic_peaks.into_iter().map(|p| p.into()).collect())
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
 fn pychemical_elements(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(pyisotopic_variants, m)?)?;
+    m.add_function(wrap_pyfunction!(isotopic_variants, m)?)?;
     m.add_class::<PyChemicalComposition>()?;
+    m.add_class::<PyPeak>()?;
     Ok(())
 }

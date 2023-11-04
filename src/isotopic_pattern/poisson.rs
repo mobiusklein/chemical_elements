@@ -59,7 +59,7 @@ pub fn poisson_approximation(
 mod test {
     use crate::isotopic_pattern::poisson::NEUTRON_SHIFT;
 
-    use super::{poisson_approximation};
+    use super::poisson_approximation;
     use super::super::{Peak, PeakList};
 
     #[test]

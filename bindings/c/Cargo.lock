@@ -69,9 +69,9 @@ checksum = "b4668fb0ea861c1df094127ac5f1da3409a82116a4ba74fca2e58ef927159bb3"
 
 [[package]]
 name = "mzpeaks"
-version = "0.4.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4400c2b634e1715bfecb67b8dc5e19d044173a35923e7e425d5c24204339218a"
+checksum = "1ca7d3275616ff1bbf96ec51b0333d87fa924750d862382833eb289c68cd4ece"
 
 [[package]]
 name = "once_cell"

@@ -218,16 +218,6 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
     }
 }
 
-// impl<'a> TryFrom<&str> for ElementSpecification<'a> {
-//     type Error = ElementSpecificationParsingError;
-
-//     fn try_from(string: &str) -> Result<Self, Self::Error> {
-//         return match ElementSpecification::parse(string) {
-//             Ok(r) => Ok(r),
-//             Err(e) => Err(e),
-//         };
-//     }
-// }
 
 impl<'a> FromStr for ElementSpecification<'a> {
     type Err = ElementSpecificationParsingError;
