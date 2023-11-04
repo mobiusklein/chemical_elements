@@ -2,7 +2,6 @@ use std::borrow::Borrow;
 use std::cmp;
 use std::collections::hash_map::{HashMap, Iter};
 use std::convert;
-use std::convert::TryFrom;
 use std::fmt::{self, Display};
 use std::hash;
 use std::iter::FromIterator;
@@ -219,16 +218,16 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
     }
 }
 
-impl<'a> TryFrom<&str> for ElementSpecification<'a> {
-    type Error = ElementSpecificationParsingError;
+// impl<'a> TryFrom<&str> for ElementSpecification<'a> {
+//     type Error = ElementSpecificationParsingError;
 
-    fn try_from(string: &str) -> Result<Self, Self::Error> {
-        return match ElementSpecification::parse(string) {
-            Ok(r) => Ok(r),
-            Err(e) => Err(e),
-        };
-    }
-}
+//     fn try_from(string: &str) -> Result<Self, Self::Error> {
+//         return match ElementSpecification::parse(string) {
+//             Ok(r) => Ok(r),
+//             Err(e) => Err(e),
+//         };
+//     }
+// }
 
 impl<'a> FromStr for ElementSpecification<'a> {
     type Err = ElementSpecificationParsingError;
@@ -546,7 +545,7 @@ impl<'lifespan> Index<&str> for ChemicalComposition<'lifespan> {
             },
             ElementSpecificationLike::No => &ZERO,
             ElementSpecificationLike::Maybe => {
-                let spec = ElementSpecification::try_from(key);
+                let spec = key.parse::<ElementSpecification>();
                 match spec {
                     Ok(spec) => self.composition.get(&spec).unwrap_or(&ZERO),
                     Err(_err) => &ZERO,
@@ -564,7 +563,7 @@ impl<'lifespan> IndexMut<&str> for ChemicalComposition<'lifespan> {
     #[inline]
     fn index_mut(&mut self, key: &str) -> &mut Self::Output {
         self.mass_cache = None;
-        let key = ElementSpecification::try_from(key).unwrap();
+        let key = key.parse::<ElementSpecification>().unwrap();
         let entry = self.composition.entry(key);
         entry.or_insert(0)
     }
@@ -715,22 +714,22 @@ impl<'lifespan> convert::From<Vec<(ElementSpecification<'lifespan>, i32)>>
     }
 }
 
-impl<'a> convert::TryFrom<&'a str> for ChemicalComposition<'a> {
-    type Error = FormulaParserError;
+impl<'a> FromStr for ChemicalComposition<'a> {
+    type Err = FormulaParserError;
 
-    fn try_from(string: &'a str) -> Result<Self, Self::Error> {
-        ChemicalComposition::parse(string)
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        ChemicalComposition::parse(s)
     }
 }
+
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use std::convert::{From, TryFrom};
 
     #[test]
     fn test_element_spec_parse() {
-        let spec = ElementSpecification::try_from("C[13]").unwrap();
+        let spec = ("C[13]").parse::<ElementSpecification>().unwrap();
         assert_eq!(spec.isotope, 13);
         assert_eq!(spec.element.symbol, "C");
     }
@@ -739,8 +738,8 @@ mod test {
     fn test_parse() {
         let case = ChemicalComposition::parse("H2O").expect("Failed to parse");
         let mut ctrl = ChemicalComposition::new();
-        ctrl.set(ElementSpecification::try_from("O").unwrap(), 1);
-        ctrl.set(ElementSpecification::try_from("H").unwrap(), 2);
+        ctrl.set(("O").parse::<ElementSpecification>().unwrap(), 1);
+        ctrl.set(("H").parse::<ElementSpecification>().unwrap(), 2);
         assert_eq!(case, ctrl);
         let case = ChemicalComposition::parse("H2O1").expect("Failed to parse");
         assert_eq!(case, ctrl);
@@ -752,21 +751,21 @@ mod test {
     fn test_from_vec_str() {
         let case = ChemicalComposition::from(vec![("O", 1), ("H", 2)]);
         let mut ctrl = ChemicalComposition::new();
-        ctrl.set(ElementSpecification::try_from("O").unwrap(), 1);
-        ctrl.set(ElementSpecification::try_from("H").unwrap(), 2);
+        ctrl.set(("O").parse::<ElementSpecification>().unwrap(), 1);
+        ctrl.set(("H").parse::<ElementSpecification>().unwrap(), 2);
         assert_eq!(case, ctrl);
     }
 
     #[test]
     fn test_from_vec_elt_spec() {
-        let hydrogen = ElementSpecification::try_from("H").unwrap();
-        let oxygen = ElementSpecification::try_from("O").unwrap();
+        let hydrogen = ("H").parse::<ElementSpecification>().unwrap();
+        let oxygen = ("O").parse::<ElementSpecification>().unwrap();
         let case = ChemicalComposition::from(vec![(oxygen, 1), (hydrogen, 2)]);
         let mut ctrl = ChemicalComposition::new();
 
-        let hydrogen = ElementSpecification::try_from("H").unwrap();
-        let oxygen = ElementSpecification::try_from("O").unwrap();
-        ctrl.set(ElementSpecification::try_from(oxygen).unwrap(), 1);
+        let hydrogen = ("H").parse::<ElementSpecification>().unwrap();
+        let oxygen = ("O").parse::<ElementSpecification>().unwrap();
+        ctrl.set(oxygen, 1);
         ctrl.set(hydrogen, 2);
         assert_eq!(case, ctrl);
     }
