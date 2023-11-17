@@ -38,10 +38,12 @@ mod helper;
 pub mod isotopic_pattern;
 mod mz;
 mod table;
+mod element_specification;
+mod composition_list;
 
-pub use crate::composition::{
-    ChemicalComposition, ElementSpecification, ElementSpecificationParsingError,
-};
+pub use crate::element_specification::{ElementSpecification, ElementSpecificationParsingError};
+pub use crate::composition::ChemicalComposition;
+pub use crate::composition_list::ChemicalComposition as ChemicalCompositionVec;
 pub use crate::element::{Element, Isotope, PeriodicTable};
 pub use crate::formula::{parse_formula, parse_formula_with_table, FormulaParserError};
 pub use crate::mz::{mass_charge_ratio, neutral_mass, PROTON};

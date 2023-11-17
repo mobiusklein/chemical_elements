@@ -7,7 +7,7 @@ use std::ops;
 #[cfg(feature = "serde1")]
 use serde::{Serialize, Deserialize};
 
-use ahash::{RandomState};
+use ahash::RandomState;
 
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
