@@ -31,7 +31,8 @@ assert!(peaks.len() == 10);
 # }
 ```
 */
-mod composition;
+mod composition_map;
+mod props;
 mod element;
 mod formula;
 mod helper;
@@ -40,12 +41,15 @@ mod mz;
 mod table;
 mod element_specification;
 mod composition_list;
+mod abstract_composition;
 
 pub use crate::element_specification::{ElementSpecification, ElementSpecificationParsingError};
-pub use crate::composition::ChemicalComposition;
+pub use crate::composition_map::ChemicalComposition;
 pub use crate::composition_list::ChemicalComposition as ChemicalCompositionVec;
+pub use crate::abstract_composition::ChemicalComposition as AbstractChemicalComposition;
 pub use crate::element::{Element, Isotope, PeriodicTable};
 pub use crate::formula::{parse_formula, parse_formula_with_table, FormulaParserError};
 pub use crate::mz::{mass_charge_ratio, neutral_mass, PROTON};
 pub use crate::table::PERIODIC_TABLE;
 pub use helper::ChemicalElements;
+pub use props::ChemicalCompositionLike;

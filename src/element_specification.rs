@@ -68,7 +68,7 @@ mod serialize_element_ref {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
 /// A hashable key referencing an element with a specific isotope
 /// state. `element` is the [`Element`](crate::Element) represented, and `isotope` is

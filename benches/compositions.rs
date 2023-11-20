@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use chemical_elements::{ChemicalComposition, ChemicalCompositionVec, ElementSpecification};
+use chemical_elements::{ChemicalComposition, ChemicalCompositionVec, ElementSpecification, AbstractChemicalComposition};
 
 
 fn elements() -> Vec<(ElementSpecification<'static>, i32)> {
@@ -21,7 +21,7 @@ fn hashmap(elements: Vec<(ElementSpecification, i32)>) {
         comp.set(k, v);
     }
     comp *= 2;
-    comp.fmass();
+    comp.mass();
 }
 
 fn vec(elements: Vec<(ElementSpecification, i32)>) {
@@ -30,7 +30,17 @@ fn vec(elements: Vec<(ElementSpecification, i32)>) {
         comp.set(k, v);
     }
     comp *= 2;
-    comp.fmass();
+    comp.mass();
+}
+
+
+fn r#abstract(elements: Vec<(ElementSpecification, i32)>) {
+    let mut comp = AbstractChemicalComposition::new();
+    for (k, v) in elements {
+        comp.set(k, v);
+    }
+    comp *= 2;
+    comp.mass();
 }
 
 
@@ -40,6 +50,9 @@ fn composition_scaling(c: &mut Criterion) {
     });
     c.bench_function("vec", |b| {
         b.iter(|| vec(black_box(elements())))
+    });
+    c.bench_function("abstract", |b| {
+        b.iter(|| r#abstract(black_box(elements())))
     });
 }
 

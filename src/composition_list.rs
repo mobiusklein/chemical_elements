@@ -1,5 +1,6 @@
+#![allow(unused)]
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
-use std::slice::Iter;
+use std::slice::{Iter, IterMut};
 
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
@@ -84,6 +85,19 @@ impl<'transient, 'lifespan: 'transient> ChemicalComposition<'lifespan> {
     #[inline]
     pub fn iter(&self) -> Iter<(ElementSpecification<'lifespan>, i32)> {
         return (self.composition).iter();
+    }
+
+    pub fn iter_mut(&mut self) -> IterMut<(ElementSpecification<'lifespan>, i32)> {
+        self.composition.iter_mut()
+    }
+
+    pub(crate) fn get_ref(&self) -> &[(ElementSpecification<'lifespan>, i32)] {
+        &self.composition
+    }
+
+    #[allow(unused)]
+    pub(crate) fn get_mut(&mut self) -> &mut [(ElementSpecification<'lifespan>, i32)] {
+        &mut self.composition
     }
 
     /**
@@ -266,27 +280,27 @@ impl<'lifespan> PartialEq<ChemicalComposition<'lifespan>> for ChemicalCompositio
     }
 }
 
-impl<'lifespan> Add<&ChemicalComposition<'lifespan>> for &ChemicalComposition<'lifespan> {
-    type Output = ChemicalComposition<'lifespan>;
+// impl<'lifespan> Add<&ChemicalComposition<'lifespan>> for &ChemicalComposition<'lifespan> {
+//     type Output = ChemicalComposition<'lifespan>;
 
-    #[inline]
-    fn add(self, other: &ChemicalComposition<'lifespan>) -> Self::Output {
-        let mut inst = self.clone();
-        inst._add_from(other);
-        return inst;
-    }
-}
+//     #[inline]
+//     fn add(self, other: &ChemicalComposition<'lifespan>) -> Self::Output {
+//         let mut inst = self.clone();
+//         inst._add_from(other);
+//         return inst;
+//     }
+// }
 
-impl<'lifespan> Sub<&'lifespan ChemicalComposition<'_>> for &ChemicalComposition<'lifespan> {
-    type Output = ChemicalComposition<'lifespan>;
+// impl<'lifespan> Sub<&'lifespan ChemicalComposition<'_>> for &ChemicalComposition<'lifespan> {
+//     type Output = ChemicalComposition<'lifespan>;
 
-    #[inline]
-    fn sub(self, other: &'lifespan ChemicalComposition<'_>) -> Self::Output {
-        let mut inst = self.clone();
-        inst._sub_from(other);
-        return inst;
-    }
-}
+//     #[inline]
+//     fn sub(self, other: &'lifespan ChemicalComposition<'_>) -> Self::Output {
+//         let mut inst = self.clone();
+//         inst._sub_from(other);
+//         return inst;
+//     }
+// }
 
 impl<'lifespan> Mul<i32> for &ChemicalComposition<'lifespan> {
     type Output = ChemicalComposition<'lifespan>;
@@ -299,33 +313,33 @@ impl<'lifespan> Mul<i32> for &ChemicalComposition<'lifespan> {
     }
 }
 
-impl<'lifespan> AddAssign<&'_ ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
-    #[inline]
-    fn add_assign(&mut self, other: &ChemicalComposition<'lifespan>) {
-        self._add_from(other);
-    }
-}
+// impl<'lifespan> AddAssign<&'_ ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+//     #[inline]
+//     fn add_assign(&mut self, other: &ChemicalComposition<'lifespan>) {
+//         self._add_from(other);
+//     }
+// }
 
-impl<'lifespan> AddAssign<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
-    #[inline]
-    fn add_assign(&mut self, other: ChemicalComposition<'lifespan>) {
-        self._add_from(&other);
-    }
-}
+// impl<'lifespan> AddAssign<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+//     #[inline]
+//     fn add_assign(&mut self, other: ChemicalComposition<'lifespan>) {
+//         self._add_from(&other);
+//     }
+// }
 
-impl<'lifespan> SubAssign<&'_ ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
-    #[inline]
-    fn sub_assign(&mut self, other: &'_ ChemicalComposition<'lifespan>) {
-        self._sub_from(other);
-    }
-}
+// impl<'lifespan> SubAssign<&'_ ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+//     #[inline]
+//     fn sub_assign(&mut self, other: &'_ ChemicalComposition<'lifespan>) {
+//         self._sub_from(other);
+//     }
+// }
 
-impl<'lifespan> SubAssign<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
-    #[inline]
-    fn sub_assign(&mut self, other: ChemicalComposition<'lifespan>) {
-        self._sub_from(&other);
-    }
-}
+// impl<'lifespan> SubAssign<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+//     #[inline]
+//     fn sub_assign(&mut self, other: ChemicalComposition<'lifespan>) {
+//         self._sub_from(&other);
+//     }
+// }
 
 impl<'lifespan> MulAssign<i32> for ChemicalComposition<'_> {
     #[inline]
@@ -458,7 +472,7 @@ mod test {
 
     #[test]
     fn test_fmass() {
-        let mut case = ChemicalComposition::from(vec![("O", 1), ("H", 2)]);
+        let mut case: ChemicalComposition = (vec![("O", 1), ("H", 2)]).into();
         let mass = 18.0105646837;
 
         let calc = case.fmass();
