@@ -20,7 +20,7 @@ impl<'lifespan> Default for ChemicalComposition<'lifespan> {
     }
 }
 
-impl<'transient, 'lifespan: 'transient> ChemicalComposition<'lifespan> {
+impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalComposition<'lifespan> {
     /// Create a new, empty [`ChemicalComposition`]
     pub fn new() -> ChemicalComposition<'lifespan> {
         Self::default()
@@ -122,94 +122,20 @@ impl<'transient, 'lifespan: 'transient> ChemicalComposition<'lifespan> {
         }
     }
 
-    pub fn iter(&'transient self) -> Iter<'transient, 'lifespan> {
+    pub fn iter(&'inner self) -> Iter<'transient, 'lifespan> {
         Iter {
             composition: self,
             offest: 0
         }
     }
 
-    pub fn iter_mut(&'transient mut self) -> IterMut<'transient, 'lifespan> {
+    pub fn iter_mut(&'inner mut self) -> IterMut<'inner, 'lifespan> {
         IterMut {
             composition: self,
             offest: 0
         }
     }
 }
-
-// impl<'a> Add for ChemicalComposition<'a> {
-//     type Output = ChemicalComposition<'a>;
-
-//     fn add(self, rhs: Self) -> Self::Output {
-//         match (self, rhs) {
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Vec(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), *v);
-//                 });
-//                 ChemicalComposition::Vec(dup)
-//             }
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Map(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), *v);
-//                 });
-//                 ChemicalComposition::Vec(dup)
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Vec(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), *v);
-//                 });
-//                 ChemicalComposition::Map(dup)
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Map(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), *v);
-//                 });
-//                 ChemicalComposition::Map(dup)
-//             }
-//         }
-//     }
-// }
-
-// impl<'a> Sub for ChemicalComposition<'a> {
-//     type Output = ChemicalComposition<'a>;
-
-//     fn sub(self, rhs: Self) -> Self::Output {
-//         match (self, rhs) {
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Vec(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), -*v);
-//                 });
-//                 ChemicalComposition::Vec(dup)
-//             }
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Map(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), -*v);
-//                 });
-//                 ChemicalComposition::Vec(dup)
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Vec(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), -*v);
-//                 });
-//                 ChemicalComposition::Map(dup)
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Map(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), -*v);
-//                 });
-//                 ChemicalComposition::Map(dup)
-//             }
-//         }
-//     }
-// }
 
 impl<'a> Mul<i32> for ChemicalComposition<'a> {
     type Output = ChemicalComposition<'a>;
@@ -223,80 +149,6 @@ impl<'a> Mul<i32> for ChemicalComposition<'a> {
     }
 }
 
-// impl<'a> Add for &ChemicalComposition<'a> {
-//     type Output = ChemicalComposition<'a>;
-
-//     fn add(self, rhs: Self) -> Self::Output {
-//         match (self, rhs) {
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Vec(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), *v);
-//                 });
-//                 ChemicalComposition::Vec(dup)
-//             }
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Map(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), *v);
-//                 });
-//                 ChemicalComposition::Vec(dup)
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Vec(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), *v);
-//                 });
-//                 ChemicalComposition::Map(dup)
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Map(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), *v);
-//                 });
-//                 ChemicalComposition::Map(dup)
-//             }
-//         }
-//     }
-// }
-
-// impl<'a> Sub for &ChemicalComposition<'a> {
-//     type Output = ChemicalComposition<'a>;
-
-//     fn sub(self, rhs: Self) -> Self::Output {
-//         match (self, rhs) {
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Vec(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), -*v);
-//                 });
-//                 ChemicalComposition::Vec(dup)
-//             }
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Map(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), -*v);
-//                 });
-//                 ChemicalComposition::Vec(dup)
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Vec(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), -*v);
-//                 });
-//                 ChemicalComposition::Map(dup)
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Map(b)) => {
-//                 let mut dup = a.clone();
-//                 b.iter().for_each(|(e, v)| {
-//                     dup.inc(e.clone(), -*v);
-//                 });
-//                 ChemicalComposition::Map(dup)
-//             }
-//         }
-//     }
-// }
-
 impl<'a> Mul<i32> for &ChemicalComposition<'a> {
     type Output = ChemicalComposition<'a>;
 
@@ -308,60 +160,6 @@ impl<'a> Mul<i32> for &ChemicalComposition<'a> {
         }
     }
 }
-
-// impl<'a> AddAssign<&ChemicalComposition<'a>> for ChemicalComposition<'a> {
-//     fn add_assign(&mut self, rhs: &Self) {
-//         match (self, &rhs) {
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Vec(b)) => {
-//                 b.iter().for_each(|(e, v)| {
-//                     a.inc(e.clone(), *v);
-//                 });
-//             }
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Map(b)) => {
-//                 b.iter().for_each(|(e, v)| {
-//                     a.inc(e.clone(), *v);
-//                 });
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Vec(b)) => {
-//                 b.iter().for_each(|(e, v)| {
-//                     a.inc(e.clone(), *v);
-//                 });
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Map(b)) => {
-//                 b.iter().for_each(|(e, v)| {
-//                     a.inc(e.clone(), *v);
-//                 });
-//             }
-//         }
-//     }
-// }
-
-// impl<'a, 'b: 'a> SubAssign<&'a ChemicalComposition<'b>> for ChemicalComposition<'b> {
-//     fn sub_assign(&mut self, rhs: &Self) {
-//         match (self, rhs) {
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Vec(b)) => {
-//                 b.iter().for_each(|(e, v)| {
-//                     a.inc(e.clone(), -*v);
-//                 });
-//             }
-//             (ChemicalComposition::Vec(a), ChemicalComposition::Map(b)) => {
-//                 b.iter().for_each(|(e, v)| {
-//                     a.inc(e.clone(), -*v);
-//                 });
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Vec(b)) => {
-//                 b.iter().for_each(|(e, v)| {
-//                     a.inc(e.clone(), -*v);
-//                 });
-//             }
-//             (ChemicalComposition::Map(a), ChemicalComposition::Map(b)) => {
-//                 b.iter().for_each(|(e, v)| {
-//                     a.inc(e.clone(), -*v);
-//                 });
-//             }
-//         }
-//     }
-// }
 
 impl<'a> MulAssign<i32> for ChemicalComposition<'a> {
     #[inline]

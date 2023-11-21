@@ -2,7 +2,6 @@ use crate::table::PERIODIC_TABLE;
 use crate::ChemicalComposition;
 use crate::ElementSpecification;
 use crate::{Element, PeriodicTable};
-
 use std::fmt::Display;
 use std::num::ParseIntError;
 

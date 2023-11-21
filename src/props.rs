@@ -53,6 +53,8 @@ pub trait ChemicalCompositionLike<'inner, 'lifespan: 'inner> {
 
     fn _iter(&'inner self) -> Self::Iter;
     // fn _iter_mut(&'inner mut self) -> dyn Iterator<Item = (&'inner ElementSpecification<'lifespan>, &'inner mut i32)>;
+
+    fn _mul_by(&mut self, scaler: i32);
 }
 
 #[derive(Debug)]
@@ -116,6 +118,10 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lif
 
     fn inc(&mut self, elt_spec: ElementSpecification<'lifespan>, count: i32) {
         self.inc(elt_spec, count)
+    }
+
+    fn _mul_by(&mut self, scaler: i32) {
+        (*self) *= scaler;
     }
 }
 
@@ -181,6 +187,10 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lif
     fn inc(&mut self, elt_spec: ElementSpecification<'lifespan>, count: i32) {
         self.inc(elt_spec, count)
     }
+
+    fn _mul_by(&mut self, scaler: i32) {
+        *self *= scaler;
+    }
 }
 
 impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lifespan>
@@ -218,6 +228,10 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lif
 
     fn inc(&mut self, elt_spec: ElementSpecification<'lifespan>, count: i32) {
         self.inc(elt_spec, count)
+    }
+
+    fn _mul_by(&mut self, scaler: i32) {
+        *self *= scaler
     }
 }
 
