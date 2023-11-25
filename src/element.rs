@@ -7,7 +7,7 @@ use std::ops;
 #[cfg(feature = "serde1")]
 use serde::{Serialize, Deserialize};
 
-use ahash::RandomState;
+use fnv::FnvBuildHasher as RandomState;
 
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
@@ -178,15 +178,6 @@ impl PeriodicTable {
 
     pub fn get(&self, symbol: &str) -> Option<&Element> {
         self.elements.get(symbol)
-    }
-}
-
-impl ops::Index<&String> for PeriodicTable {
-    type Output = Element;
-
-    #[inline]
-    fn index(&self, i: &String) -> &Self::Output {
-        return &self.elements[i];
     }
 }
 

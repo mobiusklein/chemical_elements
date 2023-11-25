@@ -1,17 +1,16 @@
-#![allow(unused)]
+// #![allow(unused)]
 use std::collections::hash_map::{HashMap, Iter, IterMut};
 use std::iter::FromIterator;
-use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
+use std::ops::{Index, IndexMut, Mul, MulAssign, Neg};
 use std::str::FromStr;
 
-use ahash::RandomState;
+use fnv::FnvBuildHasher;
 
 #[cfg(feature = "serde1")]
 use serde::{Deserialize, Serialize};
 
-use crate::element::PeriodicTable;
 use crate::element_specification::{ElementSpecification, ElementSpecificationLike};
-use crate::formula::{parse_formula, parse_formula_with_table, FormulaParserError};
+use crate::formula::FormulaParserError;
 
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
@@ -21,18 +20,18 @@ chemical formula. Built atop [`std::collections::HashMap`], and
 support addition and subtraction with other instances of the same type
 and multiplication by integers.
 */
-pub struct ChemicalComposition<'a> {
-    pub composition: HashMap<ElementSpecification<'a>, i32, RandomState>,
+pub struct ChemicalCompositionMap<'a> {
+    pub composition: HashMap<ElementSpecification<'a>, i32, FnvBuildHasher>,
     mass_cache: Option<f64>,
 }
 
 /**
 # Basic Operations
 */
-impl<'transient, 'lifespan: 'transient> ChemicalComposition<'lifespan> {
+impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
     /// Create a new, empty [`ChemicalComposition`]
-    pub fn new() -> ChemicalComposition<'lifespan> {
-        ChemicalComposition {
+    pub fn new() -> ChemicalCompositionMap<'lifespan> {
+        ChemicalCompositionMap {
             ..Default::default()
         }
     }
@@ -75,7 +74,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalComposition<'lifespan> {
     /**
     Return [`self.composition`], consuming the object
     */
-    pub fn into_inner(self) -> HashMap<ElementSpecification<'lifespan>, i32, RandomState> {
+    pub fn into_inner(self) -> HashMap<ElementSpecification<'lifespan>, i32, FnvBuildHasher> {
         self.composition
     }
 
@@ -140,58 +139,20 @@ impl<'transient, 'lifespan: 'transient> ChemicalComposition<'lifespan> {
     pub fn has_mass_cached(&self) -> bool {
         self.mass_cache.is_some()
     }
-
-    /**
-    # Formula String Parsing
-
-    The formula notation supports fixed isotopes following elements enclosed in `[]`
-    and parenthesized groups enclosed in `()`.
-
-    Parse a text formula into a [`ChemicalComposition`] using the
-    global [`PeriodicTable`].
-
-    If the formula fails to parse, a [`FormulaParserError`] is returned.
-
-    ```rust
-    # use chemical_elements::ChemicalComposition;
-    let hexose = ChemicalComposition::parse("C6O6(H2)6").unwrap();
-    assert_eq!(hexose["C"], 6);
-    assert_eq!(hexose["O"], 6);
-    assert_eq!(hexose["H"], 12);
-    ```
-    */
-    #[inline]
-    pub fn parse(
-        string: &'transient str,
-    ) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
-        parse_formula(string)
-    }
-
-    #[inline]
-    /**
-    Parse a text formula into a [`ChemicalComposition`], using the specified
-    [`PeriodicTable`], otherwise behaving identically to [`ChemicalComposition::parse`].
-    */
-    pub fn parse_with(
-        string: &str,
-        periodic_table: &'lifespan PeriodicTable,
-    ) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
-        parse_formula_with_table(string, periodic_table)
-    }
 }
 
 /**
 */
-impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
+impl<'lifespan, 'transient, 'outer: 'transient> ChemicalCompositionMap<'lifespan> {
     #[inline]
-    fn _add_from(&'outer mut self, other: &'transient ChemicalComposition<'lifespan>) {
+    fn _add_from(&'outer mut self, other: &'transient ChemicalCompositionMap<'lifespan>) {
         for (key, val) in other.composition.iter() {
             self.inc(key.clone(), *val);
         }
     }
 
     #[inline]
-    fn _sub_from(&'outer mut self, other: &'transient ChemicalComposition<'lifespan>) {
+    fn _sub_from(&'outer mut self, other: &'transient ChemicalCompositionMap<'lifespan>) {
         for (key, val) in other.composition.iter() {
             self.inc(key.clone(), -(*val));
         }
@@ -199,7 +160,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
 
     #[inline]
     fn _mul_by(&mut self, scaler: i32) {
-        self.iter_mut().for_each(|(k, v)| {
+        self.iter_mut().for_each(|(_, v)| {
             *v *= scaler
         });
     }
@@ -215,7 +176,7 @@ impl<'lifespan, 'transient, 'outer: 'transient> ChemicalComposition<'lifespan> {
     }
 }
 
-impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {
+impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalCompositionMap<'lifespan> {
     type Output = i32;
 
     #[inline]
@@ -225,7 +186,7 @@ impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalComposition<
     }
 }
 
-impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalComposition<'lifespan> {
+impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalCompositionMap<'lifespan> {
     #[inline]
     fn index_mut(&mut self, key: &ElementSpecification<'lifespan>) -> &mut Self::Output {
         self.mass_cache = None;
@@ -244,7 +205,7 @@ for each operation. These methods take advantage of the way
 [`HashMap::get`](std::collections::HashMap::get) is parameterized to avoid
 constructing a new [`ElementSpecification`] unless absolutely necessary.
 */
-impl<'a> ChemicalComposition<'a> {
+impl<'a> ChemicalCompositionMap<'a> {
     /// Get the quantity of an element by its symbol string.
     ///
     /// This method does not support fixed isotopes, but may
@@ -305,7 +266,7 @@ impl<'a> ChemicalComposition<'a> {
 
 const ZERO: i32 = 0;
 
-impl<'lifespan> Index<&str> for ChemicalComposition<'lifespan> {
+impl<'lifespan> Index<&str> for ChemicalCompositionMap<'lifespan> {
     type Output = i32;
 
     /**
@@ -329,7 +290,7 @@ impl<'lifespan> Index<&str> for ChemicalComposition<'lifespan> {
     }
 }
 
-impl<'lifespan> IndexMut<&str> for ChemicalComposition<'lifespan> {
+impl<'lifespan> IndexMut<&str> for ChemicalCompositionMap<'lifespan> {
     /** Using [`IndexMut`] with a [`&str`] will always construct a new
     [`ElementSpecification`] from the provided `&str`, in order to
     maintain the contract with with [`std::ops::Index`]
@@ -343,15 +304,15 @@ impl<'lifespan> IndexMut<&str> for ChemicalComposition<'lifespan> {
     }
 }
 
-impl<'lifespan> PartialEq<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
+impl<'lifespan> PartialEq<ChemicalCompositionMap<'lifespan>> for ChemicalCompositionMap<'lifespan> {
     #[inline]
-    fn eq(&self, other: &ChemicalComposition<'lifespan>) -> bool {
+    fn eq(&self, other: &ChemicalCompositionMap<'lifespan>) -> bool {
         self.composition == other.composition
     }
 }
 
-impl<'lifespan> Mul<i32> for &ChemicalComposition<'lifespan> {
-    type Output = ChemicalComposition<'lifespan>;
+impl<'lifespan> Mul<i32> for &ChemicalCompositionMap<'lifespan> {
+    type Output = ChemicalCompositionMap<'lifespan>;
 
     #[inline]
     fn mul(self, other: i32) -> Self::Output {
@@ -368,15 +329,15 @@ impl<'lifespan> Mul<i32> for &ChemicalComposition<'lifespan> {
 //     }
 // }
 
-impl<'lifespan> MulAssign<i32> for ChemicalComposition<'_> {
+impl<'lifespan> MulAssign<i32> for ChemicalCompositionMap<'_> {
     #[inline]
     fn mul_assign(&mut self, other: i32) {
         self._mul_by(other);
     }
 }
 
-impl<'lifespan> Neg for ChemicalComposition<'lifespan> {
-    type Output = ChemicalComposition<'lifespan>;
+impl<'lifespan> Neg for ChemicalCompositionMap<'lifespan> {
+    type Output = ChemicalCompositionMap<'lifespan>;
 
     #[inline]
     fn neg(mut self) -> Self::Output {
@@ -385,8 +346,8 @@ impl<'lifespan> Neg for ChemicalComposition<'lifespan> {
     }
 }
 
-impl<'lifespan> Neg for &ChemicalComposition<'lifespan> {
-    type Output = ChemicalComposition<'lifespan>;
+impl<'lifespan> Neg for &ChemicalCompositionMap<'lifespan> {
+    type Output = ChemicalCompositionMap<'lifespan>;
 
     #[inline]
     fn neg(self) -> Self::Output {
@@ -397,14 +358,14 @@ impl<'lifespan> Neg for &ChemicalComposition<'lifespan> {
 }
 
 impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)>
-    for ChemicalComposition<'lifespan>
+    for ChemicalCompositionMap<'lifespan>
 {
     #[inline]
     fn from_iter<T>(iter: T) -> Self
     where
         T: IntoIterator<Item = (ElementSpecification<'lifespan>, i32)>,
     {
-        let mut composition = ChemicalComposition::new();
+        let mut composition = ChemicalCompositionMap::new();
         for (k, v) in iter {
             composition.inc(k, v);
         }
@@ -412,13 +373,13 @@ impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)>
     }
 }
 
-impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalComposition<'lifespan> {
+impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalCompositionMap<'lifespan> {
     #[inline]
     fn from_iter<T>(iter: T) -> Self
     where
         T: IntoIterator<Item = (&'lifespan str, i32)>,
     {
-        let mut composition = ChemicalComposition::new();
+        let mut composition = ChemicalCompositionMap::new();
         for (k, v) in iter {
             let elt_spec = ElementSpecification::parse(k).unwrap();
             composition.inc(elt_spec, v);
@@ -427,28 +388,34 @@ impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalComposition<'lif
     }
 }
 
-impl<'lifespan> From<Vec<(&'lifespan str, i32)>> for ChemicalComposition<'lifespan> {
+impl<'lifespan> From<Vec<(&'lifespan str, i32)>> for ChemicalCompositionMap<'lifespan> {
     #[inline]
     fn from(elements: Vec<(&'lifespan str, i32)>) -> Self {
-        let composition: ChemicalComposition<'lifespan> = elements.iter().cloned().collect();
+        let composition: ChemicalCompositionMap<'lifespan> = elements.iter().cloned().collect();
         return composition;
     }
 }
 
 impl<'lifespan> From<Vec<(ElementSpecification<'lifespan>, i32)>>
-    for ChemicalComposition<'lifespan>
+    for ChemicalCompositionMap<'lifespan>
 {
     fn from(elements: Vec<(ElementSpecification<'lifespan>, i32)>) -> Self {
-        let composition: ChemicalComposition<'lifespan> = elements.iter().cloned().collect();
+        let composition: ChemicalCompositionMap<'lifespan> = elements.iter().cloned().collect();
         return composition;
     }
 }
 
-impl<'a> FromStr for ChemicalComposition<'a> {
+impl<'a> FromStr for ChemicalCompositionMap<'a> {
     type Err = FormulaParserError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        ChemicalComposition::parse(s)
+        s.parse()
+    }
+}
+
+impl<'lifespan> ToString for ChemicalCompositionMap<'lifespan> {
+    fn to_string(&self) -> String {
+        crate::formula::to_formula(self)
     }
 }
 
@@ -456,23 +423,23 @@ impl<'a> FromStr for ChemicalComposition<'a> {
 mod test {
     use super::*;
 
-    #[test]
-    fn test_parse() {
-        let case = ChemicalComposition::parse("H2O").expect("Failed to parse");
-        let mut ctrl = ChemicalComposition::new();
-        ctrl.set(("O").parse::<ElementSpecification>().unwrap(), 1);
-        ctrl.set(("H").parse::<ElementSpecification>().unwrap(), 2);
-        assert_eq!(case, ctrl);
-        let case = ChemicalComposition::parse("H2O1").expect("Failed to parse");
-        assert_eq!(case, ctrl);
-        let case = ChemicalComposition::parse("(H)2O1").expect("Failed to parse");
-        assert_eq!(case, ctrl);
-    }
+    // #[test]
+    // fn test_parse() {
+    //     let case = ChemicalCompositionMap::parse("H2O").expect("Failed to parse");
+    //     let mut ctrl = ChemicalCompositionMap::new();
+    //     ctrl.set(("O").parse::<ElementSpecification>().unwrap(), 1);
+    //     ctrl.set(("H").parse::<ElementSpecification>().unwrap(), 2);
+    //     assert_eq!(case, ctrl);
+    //     let case = ChemicalCompositionMap::parse("H2O1").expect("Failed to parse");
+    //     assert_eq!(case, ctrl);
+    //     let case = ChemicalCompositionMap::parse("(H)2O1").expect("Failed to parse");
+    //     assert_eq!(case, ctrl);
+    // }
 
     #[test]
     fn test_from_vec_str() {
-        let case = ChemicalComposition::from(vec![("O", 1), ("H", 2)]);
-        let mut ctrl = ChemicalComposition::new();
+        let case = ChemicalCompositionMap::from(vec![("O", 1), ("H", 2)]);
+        let mut ctrl = ChemicalCompositionMap::new();
         ctrl.set(("O").parse::<ElementSpecification>().unwrap(), 1);
         ctrl.set(("H").parse::<ElementSpecification>().unwrap(), 2);
         assert_eq!(case, ctrl);
@@ -482,8 +449,8 @@ mod test {
     fn test_from_vec_elt_spec() {
         let hydrogen = ("H").parse::<ElementSpecification>().unwrap();
         let oxygen = ("O").parse::<ElementSpecification>().unwrap();
-        let case = ChemicalComposition::from(vec![(oxygen, 1), (hydrogen, 2)]);
-        let mut ctrl = ChemicalComposition::new();
+        let case = ChemicalCompositionMap::from(vec![(oxygen, 1), (hydrogen, 2)]);
+        let mut ctrl = ChemicalCompositionMap::new();
 
         let hydrogen = ("H").parse::<ElementSpecification>().unwrap();
         let oxygen = ("O").parse::<ElementSpecification>().unwrap();
@@ -494,7 +461,7 @@ mod test {
 
     #[test]
     fn test_mass() {
-        let case = ChemicalComposition::from(vec![("O", 1), ("H", 2)]);
+        let case = ChemicalCompositionMap::from(vec![("O", 1), ("H", 2)]);
         let mass = 18.0105646837;
 
         let calc = case.mass();
@@ -503,7 +470,7 @@ mod test {
 
     #[test]
     fn test_fmass() {
-        let mut case = ChemicalComposition::from(vec![("O", 1), ("H", 2)]);
+        let mut case = ChemicalCompositionMap::from(vec![("O", 1), ("H", 2)]);
         let mass = 18.0105646837;
 
         let calc = case.fmass();
@@ -512,8 +479,8 @@ mod test {
 
     #[test]
     fn test_add() {
-        let case = ChemicalComposition::from(vec![("O", 1), ("H", 2)]);
-        let ctrl = ChemicalComposition::from(vec![("O", 2), ("H", 4)]);
+        let case = ChemicalCompositionMap::from(vec![("O", 1), ("H", 2)]);
+        let ctrl = ChemicalCompositionMap::from(vec![("O", 2), ("H", 4)]);
 
         let combo = &case + &case;
         assert_eq!(ctrl, combo);
@@ -521,8 +488,8 @@ mod test {
 
     #[test]
     fn test_sub() {
-        let case = ChemicalComposition::from(vec![("O", 2), ("H", 4)]);
-        let ctrl = ChemicalComposition::from(vec![("O", 1), ("H", 2)]);
+        let case = ChemicalCompositionMap::from(vec![("O", 2), ("H", 4)]);
+        let ctrl = ChemicalCompositionMap::from(vec![("O", 1), ("H", 2)]);
 
         let combo = &case - &ctrl;
         assert_eq!(ctrl, combo);
@@ -530,8 +497,8 @@ mod test {
 
     #[test]
     fn test_mul() {
-        let case = ChemicalComposition::from(vec![("O", 1), ("H", 2)]);
-        let ctrl = ChemicalComposition::from(vec![("O", 2), ("H", 4)]);
+        let case = ChemicalCompositionMap::from(vec![("O", 1), ("H", 2)]);
+        let ctrl = ChemicalCompositionMap::from(vec![("O", 2), ("H", 4)]);
 
         let combo = &case * 2;
         assert_eq!(ctrl, combo);

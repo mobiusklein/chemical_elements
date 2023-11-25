@@ -2,8 +2,9 @@ use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign};
 
 use crate::abstract_composition;
 use crate::element_specification::ElementSpecification;
+use crate::composition_map::ChemicalCompositionMap as ChemicalCompositionMap;
 use crate::{
-    AbstractChemicalComposition, ChemicalComposition as ChemicalCompositionMap,
+    AbstractChemicalComposition,
     ChemicalCompositionVec,
 };
 
@@ -253,7 +254,8 @@ impl_from!(ChemicalCompositionMap<'lifespan>, ChemicalCompositionVec<'lifespan>)
 impl_from!(ChemicalCompositionVec<'lifespan>, ChemicalCompositionMap<'lifespan>);
 impl_from!(AbstractChemicalComposition<'lifespan>, ChemicalCompositionVec<'lifespan>);
 impl_from!(AbstractChemicalComposition<'lifespan>, ChemicalCompositionMap<'lifespan>);
-
+impl_from!(ChemicalCompositionVec<'lifespan>, AbstractChemicalComposition<'lifespan>);
+impl_from!(ChemicalCompositionMap<'lifespan>, AbstractChemicalComposition<'lifespan>);
 
 macro_rules! impl_arithmetic {
     ($tp:ty) => {
@@ -436,7 +438,7 @@ mod test {
 
     #[test]
     fn test_process() {
-        let comp = ChemicalCompositionMap::parse("C6H12O6").unwrap();
+        let comp = AbstractChemicalComposition::parse("C6H12O6").unwrap();
         let mut parts = 0;
         for (_, v) in &comp {
             parts += *v;

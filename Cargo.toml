@@ -22,13 +22,13 @@ name = "chemical_elements"
 [features]
 default = ["mzpeaks", "serde1"]
 
-serde1 = ["serde", "ahash/serde", ]
+serde1 = ["serde", ]
 
 [dependencies]
 lazy_static = "1.4.0"
 mzpeaks = {version="0.7.0", optional=true}
-ahash = "0.7.4"
 serde = { version = "1.0.130", features=["derive"], optional=true}
+fnv = "1.0.7"
 
 [build-dependencies]
 serde_json = "1.0"

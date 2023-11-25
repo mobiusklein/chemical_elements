@@ -6,11 +6,56 @@ use std::collections::HashMap;
 
 use crate::element::Element;
 use crate::isotopic_pattern::{Peak, PeakList};
-use crate::{mass_charge_ratio, ChemicalComposition, ElementSpecification};
+use crate::{mass_charge_ratio, AbstractChemicalComposition as ChemicalComposition, ElementSpecification};
 
-use ahash::RandomState;
+use fnv::FnvBuildHasher as RandomState;
 
 pub type DVec = Vec<f64>;
+
+#[derive(Debug, Default, Clone)]
+pub struct ElementRegistry {
+    store: HashMap<String, usize, RandomState>,
+    counter: usize,
+}
+
+
+impl<'element> ElementRegistry {
+    pub fn new(store: HashMap<String, usize, RandomState>) -> Self {
+        let counter = if store.len() > 0 {
+            store.values().max().unwrap() + 1
+        } else {
+            0
+        };
+
+        Self { store, counter }
+    }
+
+    pub fn get(&self, element_name: &str) -> Option<usize> {
+        self.store.get(element_name).and_then(|v| {
+            Some(*v)
+        })
+    }
+
+    pub fn register(&mut self, element_name: &str) -> usize {
+        if let Some(val) = self.store.get(element_name) {
+            return *val
+        }
+
+        let val = self.counter;
+        self.store.insert(element_name.to_string(), val);
+        self.counter += 1;
+        val
+    }
+}
+
+
+
+#[derive(Debug, Clone, Copy)]
+pub struct ElementKey<'a>{
+    pub element: &'a Element,
+    pub key: usize
+}
+
 
 #[derive(Debug, Clone)]
 pub struct PolynomialParameters {
@@ -136,14 +181,14 @@ impl PolynomialParameters {
 }
 
 #[derive(Debug, Clone)]
-pub struct PhiConstants<'a> {
+pub struct PhiConstants {
     pub order: i32,
-    pub element: &'a Element,
+    pub element_key: String,
     pub element_coefficients: PolynomialParameters,
     pub mass_coefficients: PolynomialParameters,
 }
 
-impl<'a> PhiConstants<'a> {
+impl PhiConstants {
     pub fn from_element(element: &Element) -> PhiConstants {
         let mut accumulator = DVec::new();
         let order = element.max_neutron_shift as i32;
@@ -152,7 +197,22 @@ impl<'a> PhiConstants<'a> {
         accumulator.clear();
         let mass_coefficients = PolynomialParameters::from_element(element, true, &mut accumulator);
         return PhiConstants {
-            element,
+            element_key: element.symbol.clone(),
+            order,
+            element_coefficients,
+            mass_coefficients,
+        };
+    }
+
+    pub fn from_element_key(element_key: &ElementKey) -> PhiConstants {
+        let mut accumulator = DVec::new();
+        let order = element_key.element.max_neutron_shift as i32;
+        let element_coefficients =
+            PolynomialParameters::from_element(element_key.element, false, &mut accumulator);
+        accumulator.clear();
+        let mass_coefficients = PolynomialParameters::from_element(element_key.element, true, &mut accumulator);
+        return PhiConstants {
+            element_key: element_key.element.symbol.clone(),
             order,
             element_coefficients,
             mass_coefficients,
@@ -160,25 +220,28 @@ impl<'a> PhiConstants<'a> {
     }
 }
 
+
+pub type PhiKey = str;
+
 #[derive(Debug, Clone)]
-pub struct IsotopicConstants<'lifespan, 'outer: 'lifespan> {
-    pub constants: HashMap<&'lifespan str, PhiConstants<'outer>, RandomState>,
+pub struct IsotopicConstants<'lifespan> {
+    pub constants: HashMap<&'lifespan PhiKey, PhiConstants, RandomState>,
     pub order: i32,
 }
 
-impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan, 'outer> {
-    pub fn new(size: usize) -> IsotopicConstants<'lifespan, 'outer> {
+impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
+    pub fn new(size: usize) -> IsotopicConstants<'lifespan> {
         IsotopicConstants {
-            constants: HashMap::with_capacity_and_hasher(size, RandomState::new()),
+            constants: HashMap::with_capacity_and_hasher(size, RandomState::default()),
             order: 0,
         }
     }
 
-    pub fn get(&self, symbol: &str) -> Option<&PhiConstants> {
+    pub fn get(&self, symbol: &PhiKey) -> Option<&PhiConstants> {
         self.constants.get(symbol)
     }
 
-    pub fn set(&mut self, symbol: &'lifespan str, constants: PhiConstants<'outer>) {
+    pub fn set(&mut self, symbol: &'lifespan PhiKey, constants: PhiConstants) {
         self.constants.insert(symbol, constants);
     }
 
@@ -190,6 +253,10 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan, 'outer> {
 
         let phi = PhiConstants::from_element(element);
         self.constants.insert(element.symbol.as_ref(), phi);
+    }
+
+    pub fn add_key(&mut self, element_key: &'outer ElementKey) {
+        self.add(element_key.element)
     }
 
     pub fn update(&mut self) {
@@ -221,7 +288,7 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan, 'outer> {
         }
     }
 
-    pub fn nth_element_power_sum(&self, symbol: &str, order: usize) -> f64 {
+    pub fn nth_element_power_sum(&self, symbol: &PhiKey, order: usize) -> f64 {
         let phi = self
             .get(symbol)
             .expect(format!("Expected element {} in constants", symbol).as_ref());
@@ -238,21 +305,21 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan, 'outer> {
 
 #[derive(Debug, Clone)]
 pub struct IsotopicConstantsCache<'lifespan> {
-    pub cache: HashMap<&'lifespan str, PhiConstants<'lifespan>, RandomState>,
+    pub cache: HashMap<&'lifespan PhiKey, PhiConstants, RandomState>,
 }
 
 impl<'lifespan, 'outer: 'lifespan> IsotopicConstantsCache<'lifespan> {
     pub fn new() -> IsotopicConstantsCache<'lifespan> {
         return IsotopicConstantsCache {
-            cache: HashMap::with_capacity_and_hasher(6, RandomState::new()),
+            cache: HashMap::with_capacity_and_hasher(6, RandomState::default()),
         };
     }
 
-    pub fn checkout(&mut self, symbol: &str) -> Option<PhiConstants<'lifespan>> {
+    pub fn checkout(&mut self, symbol: &PhiKey) -> Option<PhiConstants> {
         self.cache.remove(symbol)
     }
 
-    pub fn receive(&mut self, symbol: &'lifespan str, constants: PhiConstants<'lifespan>) -> bool {
+    pub fn receive(&mut self, symbol: &'lifespan PhiKey, constants: PhiConstants) -> bool {
         let entry = self.cache.entry(symbol);
         match entry {
             Entry::Vacant(ent) => {
@@ -270,7 +337,7 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstantsCache<'lifespan> {
         }
     }
 
-    pub fn receive_from(&mut self, mut params: IsotopicConstants<'lifespan, 'outer>) {
+    pub fn receive_from(&mut self, mut params: IsotopicConstants<'lifespan>) {
         for (k, v) in params.constants.drain() {
             self.receive(k, v);
         }
@@ -278,10 +345,10 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstantsCache<'lifespan> {
 }
 
 pub fn max_variants(composition: &ChemicalComposition) -> i32 {
-    let mut acc = 0;
-    for (elt, cnt) in composition.iter() {
-        acc += elt.element.max_neutron_shift as i32 * cnt;
-    }
+    let acc = composition
+        .iter()
+        .map(|(elt, cnt)| elt.element.max_neutron_shift as i32 * *cnt)
+        .sum();
     acc
 }
 
@@ -299,7 +366,7 @@ struct ElementPolynomialMap<'a> {
 impl<'a> ElementPolynomialMap<'a> {
     pub fn new(size: usize) -> ElementPolynomialMap<'a> {
         ElementPolynomialMap {
-            polynomials: HashMap::with_capacity_and_hasher(size, RandomState::new()),
+            polynomials: HashMap::with_capacity_and_hasher(size, RandomState::default()),
         }
     }
 
@@ -315,7 +382,7 @@ impl<'a> ElementPolynomialMap<'a> {
 #[derive(Debug)]
 pub struct IsotopicDistribution<'lifespan, 'outer> {
     pub composition: ChemicalComposition<'outer>,
-    pub constants: IsotopicConstants<'lifespan, 'outer>,
+    pub constants: IsotopicConstants<'lifespan>,
     pub order: i32,
     pub average_mass: f64,
     pub monoisotopic_peak: Peak,
@@ -569,12 +636,13 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
 /// with the specified peak count and charge state.
 ///
 /// if `npeaks` is 0, a guess will be used.
-pub fn isotopic_variants<'a>(
-    composition: ChemicalComposition<'a>,
+pub fn isotopic_variants<'a, C: Into<ChemicalComposition<'a>>>(
+    composition: C,
     npeaks: i32,
     charge: i32,
     charge_carrier: f64,
 ) -> PeakList {
+    let composition = composition.into();
     let npeaks = if npeaks == 0 {
         guess_npeaks(&composition, 300)
     } else {
@@ -600,13 +668,14 @@ impl<'transient, 'lifespan: 'transient, 'outer: 'lifespan>
     }
 
     #[inline]
-    pub fn isotopic_variants(
+    pub fn isotopic_variants<C: Into<ChemicalComposition<'outer>>>(
         &mut self,
-        composition: ChemicalComposition<'outer>,
+        composition: C,
         npeaks: i32,
         charge: i32,
         charge_carrier: f64,
     ) -> PeakList {
+        let composition = composition.into();
         let npeaks = if npeaks == 0 {
             guess_npeaks(&composition, 300)
         } else {
