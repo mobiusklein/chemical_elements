@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign};
+use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Neg};
 
 use crate::abstract_composition;
 use crate::element_specification::ElementSpecification;
@@ -232,7 +232,14 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lif
     }
 
     fn _mul_by(&mut self, scaler: i32) {
-        *self *= scaler
+        match self {
+            AbstractChemicalComposition::Vec(c) => {
+                *c *= scaler;
+            },
+            AbstractChemicalComposition::Map(c) => {
+                *c *= scaler;
+            },
+        }
     }
 }
 
@@ -362,7 +369,65 @@ macro_rules! impl_arithmetic {
                 });
             }
         }
+
+        impl<'lifespan> Mul<i32> for &$tp {
+            type Output = $tp;
+
+            #[inline]
+            fn mul(self, other: i32) -> Self::Output {
+                let mut inst = self.clone();
+                inst._mul_by(other);
+                return inst;
+            }
+        }
+
+        impl<'lifespan> Mul<i32> for $tp {
+            type Output = $tp;
+
+            #[inline]
+            fn mul(self, other: i32) -> Self::Output {
+                let mut inst = self.clone();
+                inst._mul_by(other);
+                return inst;
+            }
+        }
+
+        impl<'lifespan> MulAssign<i32> for $tp {
+            #[inline]
+            fn mul_assign(&mut self, other: i32) {
+                self._mul_by(other);
+            }
+        }
+
+        impl<'lifespan> MulAssign<i32> for &mut $tp {
+            #[inline]
+            fn mul_assign(&mut self, other: i32) {
+                self._mul_by(other);
+            }
+        }
+
+        impl<'lifespan> Neg for $tp {
+            type Output = $tp;
+
+            #[inline]
+            fn neg(mut self) -> Self::Output {
+                self._mul_by(-1);
+                self
+            }
+        }
+
+        impl<'lifespan> Neg for &$tp {
+            type Output = $tp;
+
+            #[inline]
+            fn neg(self) -> Self::Output {
+                let mut dup = self.clone();
+                dup._mul_by(-1);
+                dup
+            }
+        }
     };
+
 }
 
 impl_arithmetic!(ChemicalCompositionMap<'lifespan>);

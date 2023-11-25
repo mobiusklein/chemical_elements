@@ -1,7 +1,7 @@
 // #![allow(unused)]
 use std::collections::hash_map::{HashMap, Iter, IterMut};
 use std::iter::FromIterator;
-use std::ops::{Index, IndexMut, Mul, MulAssign, Neg};
+use std::ops::{Index, IndexMut};
 use std::str::FromStr;
 
 use fnv::FnvBuildHasher;
@@ -145,21 +145,21 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
 */
 impl<'lifespan, 'transient, 'outer: 'transient> ChemicalCompositionMap<'lifespan> {
     #[inline]
-    fn _add_from(&'outer mut self, other: &'transient ChemicalCompositionMap<'lifespan>) {
+    pub(crate) fn _add_from(&'outer mut self, other: &'transient ChemicalCompositionMap<'lifespan>) {
         for (key, val) in other.composition.iter() {
             self.inc(key.clone(), *val);
         }
     }
 
     #[inline]
-    fn _sub_from(&'outer mut self, other: &'transient ChemicalCompositionMap<'lifespan>) {
+    pub(crate) fn _sub_from(&'outer mut self, other: &'transient ChemicalCompositionMap<'lifespan>) {
         for (key, val) in other.composition.iter() {
             self.inc(key.clone(), -(*val));
         }
     }
 
     #[inline]
-    fn _mul_by(&mut self, scaler: i32) {
+    pub(crate) fn _mul_by(&mut self, scaler: i32) {
         self.iter_mut().for_each(|(_, v)| {
             *v *= scaler
         });
@@ -308,52 +308,6 @@ impl<'lifespan> PartialEq<ChemicalCompositionMap<'lifespan>> for ChemicalComposi
     #[inline]
     fn eq(&self, other: &ChemicalCompositionMap<'lifespan>) -> bool {
         self.composition == other.composition
-    }
-}
-
-impl<'lifespan> Mul<i32> for &ChemicalCompositionMap<'lifespan> {
-    type Output = ChemicalCompositionMap<'lifespan>;
-
-    #[inline]
-    fn mul(self, other: i32) -> Self::Output {
-        let mut inst = self.clone();
-        inst._mul_by(other);
-        return inst;
-    }
-}
-
-// impl<'lifespan> SubAssign<ChemicalComposition<'lifespan>> for ChemicalComposition<'lifespan> {
-//     #[inline]
-//     fn sub_assign(&mut self, other: ChemicalComposition<'lifespan>) {
-//         self._sub_from(&other);
-//     }
-// }
-
-impl<'lifespan> MulAssign<i32> for ChemicalCompositionMap<'_> {
-    #[inline]
-    fn mul_assign(&mut self, other: i32) {
-        self._mul_by(other);
-    }
-}
-
-impl<'lifespan> Neg for ChemicalCompositionMap<'lifespan> {
-    type Output = ChemicalCompositionMap<'lifespan>;
-
-    #[inline]
-    fn neg(mut self) -> Self::Output {
-        self._mul_by(-1);
-        self
-    }
-}
-
-impl<'lifespan> Neg for &ChemicalCompositionMap<'lifespan> {
-    type Output = ChemicalCompositionMap<'lifespan>;
-
-    #[inline]
-    fn neg(self) -> Self::Output {
-        let mut dup = self.clone();
-        dup._mul_by(-1);
-        dup
     }
 }
 

@@ -123,6 +123,28 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalComposition<'lif
         }
     }
 
+    #[inline]
+    pub(crate) fn _add_from(&mut self, other: &'transient ChemicalCompositionVec<'lifespan>) {
+        for (key, val) in other.iter() {
+            self.inc(key.clone(), *val);
+        }
+    }
+
+    #[inline]
+    pub(crate) fn _sub_from(&mut self, other: &'transient ChemicalCompositionVec<'lifespan>) {
+        for (key, val) in other.iter() {
+            self.inc(key.clone(), -(*val));
+        }
+    }
+
+    #[inline]
+    pub(crate) fn _mul_by(&mut self, scaler: i32) {
+        match self {
+            ChemicalComposition::Vec(c) => c._mul_by(scaler),
+            ChemicalComposition::Map(c) => c._mul_by(scaler),
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         match self {
             ChemicalComposition::Vec(i) => i.is_empty(),
@@ -199,61 +221,6 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalComposition<'lif
     ) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
         let mut parser = FormulaParser::default();
         parser.parse_formula_with_table_generic(string, periodic_table)
-    }
-}
-
-impl<'a> Mul<i32> for ChemicalComposition<'a> {
-    type Output = ChemicalComposition<'a>;
-
-    #[inline]
-    fn mul(self, other: i32) -> Self::Output {
-        match &self {
-            ChemicalComposition::Vec(c) => ChemicalComposition::Vec(c * other),
-            ChemicalComposition::Map(c) => ChemicalComposition::Map(c * other),
-        }
-    }
-}
-
-impl<'a> Mul<i32> for &ChemicalComposition<'a> {
-    type Output = ChemicalComposition<'a>;
-
-    #[inline]
-    fn mul(self, other: i32) -> Self::Output {
-        match &self {
-            ChemicalComposition::Vec(c) => ChemicalComposition::Vec(c * other),
-            ChemicalComposition::Map(c) => ChemicalComposition::Map(c * other),
-        }
-    }
-}
-
-impl<'a> MulAssign<i32> for ChemicalComposition<'a> {
-    #[inline]
-    fn mul_assign(&mut self, other: i32) {
-        match self {
-            ChemicalComposition::Vec(c) => (c.mul_assign(other)),
-            ChemicalComposition::Map(c) => (c.mul_assign(other)),
-        };
-    }
-}
-
-impl<'lifespan> Neg for ChemicalComposition<'lifespan> {
-    type Output = ChemicalComposition<'lifespan>;
-
-    #[inline]
-    fn neg(mut self) -> Self::Output {
-        self._mul_by(-1);
-        self
-    }
-}
-
-impl<'lifespan> Neg for &ChemicalComposition<'lifespan> {
-    type Output = ChemicalComposition<'lifespan>;
-
-    #[inline]
-    fn neg(self) -> Self::Output {
-        let mut dup = self.clone();
-        dup._mul_by(-1);
-        dup
     }
 }
 

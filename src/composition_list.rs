@@ -171,23 +171,6 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionVec<'lifespan> {
     pub fn has_mass_cached(&self) -> bool {
         self.mass_cache.is_some()
     }
-
-    // pub fn parse(string: &str) -> Result<Self, FormulaParserError> {
-    //     string.parse()
-    // }
-
-    // #[inline]
-    // /**
-    // Parse a text formula into a [`ChemicalComposition`], using the specified
-    // [`PeriodicTable`], otherwise behaving identically to [`ChemicalComposition::parse`].
-    // */
-    // pub fn parse_with(
-    //     string: &str,
-    //     periodic_table: &'lifespan PeriodicTable,
-    // ) -> Result<ChemicalCompositionVec<'lifespan>, FormulaParserError> {
-    //     let mut parser = FormulaParser::default();
-    //     parser.parse_formula_with_table_generic(string, periodic_table)
-    // }
 }
 
 const ZERO: i32 = 0;
@@ -262,21 +245,21 @@ impl<'lifespan> IndexMut<&str> for ChemicalCompositionVec<'lifespan> {
 
 impl<'lifespan, 'transient, 'outer: 'transient> ChemicalCompositionVec<'lifespan> {
     #[inline]
-    fn _add_from(&'outer mut self, other: &'transient ChemicalCompositionVec<'lifespan>) {
+    pub(crate) fn _add_from(&'outer mut self, other: &'transient ChemicalCompositionVec<'lifespan>) {
         for (key, val) in other.iter() {
             self.inc(key.clone(), *val);
         }
     }
 
     #[inline]
-    fn _sub_from(&'outer mut self, other: &'transient ChemicalCompositionVec<'lifespan>) {
+    pub(crate) fn _sub_from(&'outer mut self, other: &'transient ChemicalCompositionVec<'lifespan>) {
         for (key, val) in other.iter() {
             self.inc(key.clone(), -(*val));
         }
     }
 
     #[inline]
-    fn _mul_by(&mut self, scaler: i32) {
+    pub(crate) fn _mul_by(&mut self, scaler: i32) {
         self.composition.iter_mut().for_each(|(_, v)| {
             *v *= scaler;
         })
@@ -306,44 +289,6 @@ impl<'lifespan> PartialEq<ChemicalCompositionVec<'lifespan>> for ChemicalComposi
     }
 }
 
-impl<'lifespan> Mul<i32> for &ChemicalCompositionVec<'lifespan> {
-    type Output = ChemicalCompositionVec<'lifespan>;
-
-    #[inline]
-    fn mul(self, other: i32) -> Self::Output {
-        let mut inst = self.clone();
-        inst._mul_by(other);
-        return inst;
-    }
-}
-
-impl<'lifespan> MulAssign<i32> for ChemicalCompositionVec<'_> {
-    #[inline]
-    fn mul_assign(&mut self, other: i32) {
-        self._mul_by(other);
-    }
-}
-
-impl<'lifespan> Neg for ChemicalCompositionVec<'lifespan> {
-    type Output = ChemicalCompositionVec<'lifespan>;
-
-    #[inline]
-    fn neg(mut self) -> Self::Output {
-        self._mul_by(-1);
-        self
-    }
-}
-
-impl<'lifespan> Neg for &ChemicalCompositionVec<'lifespan> {
-    type Output = ChemicalCompositionVec<'lifespan>;
-
-    #[inline]
-    fn neg(self) -> Self::Output {
-        let mut dup = self.clone();
-        dup._mul_by(-1);
-        dup
-    }
-}
 
 impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)>
     for ChemicalCompositionVec<'lifespan>

@@ -5,7 +5,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 use crate::element::Element;
-use crate::isotopic_pattern::{Peak, PeakList};
+use crate::isotopic_pattern::{Peak, PeakList, poisson_approximate_n_peaks_of};
 use crate::{mass_charge_ratio, AbstractChemicalComposition as ChemicalComposition, ElementSpecification};
 
 use fnv::FnvBuildHasher as RandomState;
@@ -353,10 +353,11 @@ pub fn max_variants(composition: &ChemicalComposition) -> i32 {
 }
 
 pub fn guess_npeaks(composition: &ChemicalComposition, max_npeaks: i32) -> i32 {
-    let total_variants = max_variants(composition);
-    let npeaks = (total_variants as f64).sqrt() as i32 - 2;
-    let result = cmp::min(cmp::max(npeaks, 3), max_npeaks);
-    return result;
+    // let total_variants = max_variants(composition);
+    // let npeaks = (total_variants as f64).sqrt() as i32 - 2;
+    // let result = cmp::min(cmp::max(npeaks, 3), max_npeaks);
+    let result = poisson_approximate_n_peaks_of(composition.mass(), 0.9999) as i32;
+    return result.min(max_npeaks);
 }
 
 struct ElementPolynomialMap<'a> {
@@ -692,6 +693,7 @@ impl<'transient, 'lifespan: 'transient, 'outer: 'lifespan>
 #[cfg(test)]
 mod test {
     use super::*;
+    use super::super::poisson_approximate_n_peaks_of;
     use crate::PROTON;
 
     #[test]
@@ -724,5 +726,15 @@ mod test {
         assert_eq!(peaks.len(), 5);
         assert!((peaks[0].mz - 180.06339).abs() < 1e-6);
         assert!((peaks[0].intensity - 0.9226372340115745).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_max_variants() {
+        let comp = ChemicalComposition::parse("C6H12O6").unwrap();
+        let comp = comp * 6;
+        let m = comp.mass();
+        let max_vars = guess_npeaks(&comp, 300);
+        let approx = poisson_approximate_n_peaks_of(m, 0.999);
+        eprintln!("{} > {}", max_vars, approx);
     }
 }

@@ -1,6 +1,6 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 
-use chemical_elements::{ChemicalComposition, ChemicalCompositionVec, ElementSpecification, AbstractChemicalComposition};
+use chemical_elements::{ChemicalCompositionMap, ChemicalCompositionVec, ElementSpecification, AbstractChemicalComposition};
 
 
 fn elements() -> Vec<(ElementSpecification<'static>, i32)> {
@@ -16,7 +16,7 @@ fn elements() -> Vec<(ElementSpecification<'static>, i32)> {
 
 
 fn hashmap(elements: Vec<(ElementSpecification, i32)>) {
-    let mut comp = ChemicalComposition::new();
+    let mut comp = ChemicalCompositionMap::new();
     for (k, v) in elements {
         comp.set(k, v);
     }

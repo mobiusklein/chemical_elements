@@ -26,7 +26,7 @@ let peaks = isotopic_variants(composition, 0, 1, PROTON);
 for peak in peaks.iter() {
     println!("{}", peak);
 }
-assert!(peaks.len() == 10);
+assert_eq!(peaks.len(), 6);
 # Ok(())
 # }
 ```
