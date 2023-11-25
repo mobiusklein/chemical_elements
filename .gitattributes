@@ -1,0 +1,5 @@
+* text=auto
+
+*.rs text eol=lf
+*.md text
+*.sh text eol=lf
