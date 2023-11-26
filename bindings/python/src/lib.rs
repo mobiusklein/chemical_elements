@@ -1,3 +1,5 @@
+use std::ops::Index;
+
 use pyo3::ffi::PyMapping_Check;
 use pyo3::types::{PyMapping, PyUnicode};
 use pyo3::{
@@ -103,7 +105,7 @@ impl PyChemicalComposition {
     }
 
     pub fn __getitem__(&self, key: &str) -> i32 {
-        self.inner.get_str(key)
+        *self.inner.index(key)
     }
 
     pub fn __setitem__(&mut self, key: &str, val: i32) {

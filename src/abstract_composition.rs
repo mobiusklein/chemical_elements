@@ -51,6 +51,13 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalComposition<'lif
         }
     }
 
+    pub fn get_str(&self, sym: &str) -> i32 {
+        match self {
+            ChemicalComposition::Vec(v) => *v.index(sym),
+            ChemicalComposition::Map(m) => m.get_str(sym),
+        }
+    }
+
     #[inline]
     /// Set the count for a specific element. This will invalidate the mass cache.
     pub fn set(&mut self, elt_spec: ElementSpecification<'lifespan>, count: i32) {
@@ -67,6 +74,16 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalComposition<'lif
         match self {
             ChemicalComposition::Vec(v) => v.inc(elt_spec, count),
             ChemicalComposition::Map(m) => m.inc(elt_spec, count),
+        }
+    }
+
+    #[inline]
+    /// Add some value to the count of the specified element. This will invalidate the
+    /// mass cache.
+    pub fn inc_str(&mut self, elt_spec: &str, count: i32) {
+        match self {
+            ChemicalComposition::Vec(v) => *v.index_mut(elt_spec) += count,
+            ChemicalComposition::Map(m) => m.inc_str(elt_spec, count),
         }
     }
 
