@@ -3,10 +3,8 @@ use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Neg};
 use crate::abstract_composition;
 use crate::element_specification::ElementSpecification;
 use crate::composition_map::ChemicalCompositionMap as ChemicalCompositionMap;
-use crate::{
-    AbstractChemicalComposition,
-    ChemicalCompositionVec,
-};
+use crate::composition_list::ChemicalCompositionVec;
+use crate::abstract_composition::ChemicalComposition as AbstractChemicalComposition;
 
 pub trait ChemicalCompositionLike<'inner, 'lifespan: 'inner> {
     type Iter: Iterator<Item = (&'inner ElementSpecification<'lifespan>, &'inner i32)>;

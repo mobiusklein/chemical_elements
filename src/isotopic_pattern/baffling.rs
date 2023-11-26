@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 use crate::element::Element;
 use crate::isotopic_pattern::{Peak, PeakList, poisson_approximate_n_peaks_of};
-use crate::{mass_charge_ratio, AbstractChemicalComposition as ChemicalComposition, ElementSpecification};
+use crate::{mass_charge_ratio, ChemicalComposition, ElementSpecification};
 
 use fnv::FnvBuildHasher as RandomState;
 

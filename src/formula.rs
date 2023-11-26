@@ -2,9 +2,8 @@ use std::fmt::Display;
 use std::num::ParseIntError;
 
 use crate::table::PERIODIC_TABLE;
-use crate::ChemicalComposition;
 use crate::ElementSpecification;
-use crate::{AbstractChemicalComposition, AbstractChemicalCompositionRef};
+use crate::abstract_composition::{ChemicalComposition, ChemicalCompositionRef};
 use crate::{Element, PeriodicTable};
 
 #[derive(Debug)]
@@ -111,12 +110,12 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
         }
     }
 
-    pub fn parse_formula_with_table_generic<C: From<AbstractChemicalComposition<'lifespan>>>(
+    pub fn parse_formula_with_table_generic<C: From<ChemicalComposition<'lifespan>>>(
         &mut self,
         string: &str,
         periodic_table: &'lifespan PeriodicTable,
     ) -> Result<C, FormulaParserError> {
-        let mut acc = AbstractChemicalComposition::default();
+        let mut acc = ChemicalComposition::default();
         let n = string.len();
 
         for (i, c) in string.char_indices() {
@@ -681,9 +680,9 @@ pub fn parse_formula_with_table<'lifespan>(
 
 pub fn to_formula<'inner, 'lifespan: 'inner, C>(composition: &'inner C) -> String
 where
-    &'inner C: Into<AbstractChemicalCompositionRef<'inner, 'lifespan>> + 'inner,
+    &'inner C: Into<ChemicalCompositionRef<'inner, 'lifespan>> + 'inner,
 {
-    let composition: AbstractChemicalCompositionRef<'inner, 'lifespan> = composition.into();
+    let composition: ChemicalCompositionRef<'inner, 'lifespan> = composition.into();
     let mut result = String::with_capacity(composition.len() * 2);
     let carbon_count = composition["C"];
     if carbon_count != 0 {

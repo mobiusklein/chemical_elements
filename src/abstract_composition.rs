@@ -199,7 +199,7 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalComposition<'lif
     If the formula fails to parse, a [`FormulaParserError`] is returned.
 
     ```rust
-    # use chemical_elements::AbstractChemicalComposition as ChemicalComposition;
+    # use chemical_elements::ChemicalComposition;
     let hexose: ChemicalComposition = "C6O6(H2)6".parse().unwrap();
     assert_eq!(hexose["C"], 6);
     assert_eq!(hexose["O"], 6);

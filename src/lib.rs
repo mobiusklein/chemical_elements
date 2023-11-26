@@ -46,10 +46,7 @@ mod abstract_composition;
 pub use crate::element_specification::{ElementSpecification, ElementSpecificationParsingError};
 pub use crate::composition_map::ChemicalCompositionMap as ChemicalCompositionMap;
 pub use crate::composition_list::ChemicalCompositionVec as ChemicalCompositionVec;
-pub use crate::abstract_composition::{ChemicalComposition as AbstractChemicalComposition, ChemicalCompositionRef as AbstractChemicalCompositionRef};
-
-pub type ChemicalComposition<'lifespan> = AbstractChemicalComposition<'lifespan>;
-
+pub use crate::abstract_composition::{ChemicalComposition, ChemicalCompositionRef};
 pub use crate::element::{Element, Isotope, PeriodicTable};
 pub use crate::formula::{parse_formula, parse_formula_with_table, FormulaParserError};
 pub use crate::mz::{mass_charge_ratio, neutral_mass, PROTON};
