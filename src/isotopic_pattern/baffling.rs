@@ -100,19 +100,17 @@ impl PolynomialParameters {
     pub fn update_elementary_symmetric_polynomial(&mut self, order: i32) {
         let begin = self.elementary_symmetric_polynomial.len();
         let end = self.power_sum.len();
-
+        self.elementary_symmetric_polynomial.reserve(end.saturating_sub(begin));
         for k in begin..end {
             if k == 0 {
                 self.elementary_symmetric_polynomial.push(1.0);
             } else if k > (order as usize) {
                 self.elementary_symmetric_polynomial.push(0.0);
             } else {
-                let mut el = 0.0;
-                for j in 1..k + 1 {
+                let el = (1..k + 1).into_iter().map(|j| {
                     let sign = if (j % 2) == 1 { 1.0 } else { -1.0 };
-                    el += sign * self.power_sum[j] * self.elementary_symmetric_polynomial[k - j];
-                }
-                el /= k as f64;
+                    return sign * self.power_sum[j] * self.elementary_symmetric_polynomial[k - j]
+                }).sum::<f64>() / k as f64;
                 self.elementary_symmetric_polynomial.push(el);
             }
         }
