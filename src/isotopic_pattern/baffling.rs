@@ -225,24 +225,32 @@ pub type PhiKey = str;
 
 #[derive(Debug, Clone)]
 pub struct IsotopicConstants<'lifespan> {
-    pub constants: HashMap<&'lifespan PhiKey, PhiConstants, RandomState>,
+    // pub constants: HashMap<&'lifespan PhiKey, PhiConstants, RandomState>,
+    pub constants: Vec<(&'lifespan PhiKey, PhiConstants)>,
     pub order: i32,
 }
 
 impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
     pub fn new(size: usize) -> IsotopicConstants<'lifespan> {
         IsotopicConstants {
-            constants: HashMap::with_capacity_and_hasher(size, RandomState::default()),
+            // constants: HashMap::with_capacity_and_hasher(size, RandomState::default()),
+            constants: Vec::with_capacity(size),
             order: 0,
         }
     }
 
     pub fn get(&self, symbol: &PhiKey) -> Option<&PhiConstants> {
-        self.constants.get(symbol)
+        // self.constants.get(symbol)
+        self.constants.iter().find(|(k, _)| {
+            *k == symbol
+        }).and_then(|(_, v)| {
+            Some(v)
+        })
     }
 
     pub fn set(&mut self, symbol: &'lifespan PhiKey, constants: PhiConstants) {
-        self.constants.insert(symbol, constants);
+        // self.constants.insert(symbol, constants);
+        self.constants.push((symbol, constants))
     }
 
     pub fn add(&mut self, element: &'outer Element) {
@@ -252,7 +260,8 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
         };
 
         let phi = PhiConstants::from_element(element);
-        self.constants.insert(element.symbol.as_ref(), phi);
+        // self.constants.insert(element.symbol.as_ref(), phi);
+        self.set(element.symbol.as_ref(), phi);
     }
 
     pub fn add_key(&mut self, element_key: &'outer ElementKey) {
@@ -264,7 +273,8 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
             if self.order < elt_params.order {
                 continue;
             }
-            for _j in elt_params.order..self.order + 1 {
+
+            (elt_params.order..self.order + 1).for_each(|_| {
                 elt_params
                     .element_coefficients
                     .elementary_symmetric_polynomial
@@ -273,7 +283,7 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
                     .mass_coefficients
                     .elementary_symmetric_polynomial
                     .push(0.0);
-            }
+            });
 
             elt_params.order = elt_params
                 .element_coefficients
@@ -291,14 +301,14 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
     pub fn nth_element_power_sum(&self, symbol: &PhiKey, order: usize) -> f64 {
         let phi = self
             .get(symbol)
-            .expect(format!("Expected element {} in constants", symbol).as_ref());
+            .unwrap_or_else(|| panic!("Expected element {} in constants", symbol));
         phi.element_coefficients.power_sum[order]
     }
 
     pub fn nth_element_power_sum_mass(&self, symbol: &str, order: usize) -> f64 {
         let phi = self
             .get(symbol)
-            .expect(format!("Expected element {} in constants", symbol).as_ref());
+            .unwrap_or_else(|| panic!("Expected element {} in constants", symbol));
         phi.mass_coefficients.power_sum[order]
     }
 }
@@ -338,7 +348,7 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstantsCache<'lifespan> {
     }
 
     pub fn receive_from(&mut self, mut params: IsotopicConstants<'lifespan>) {
-        for (k, v) in params.constants.drain() {
+        for (k, v) in params.constants.drain(..) {
             self.receive(k, v);
         }
     }
@@ -361,22 +371,24 @@ pub fn guess_npeaks(composition: &ChemicalComposition, max_npeaks: i32) -> i32 {
 }
 
 struct ElementPolynomialMap<'a> {
-    pub polynomials: HashMap<&'a str, DVec, RandomState>,
+    pub polynomials: Vec<(&'a str, DVec)>
 }
 
 impl<'a> ElementPolynomialMap<'a> {
     pub fn new(size: usize) -> ElementPolynomialMap<'a> {
         ElementPolynomialMap {
-            polynomials: HashMap::with_capacity_and_hasher(size, RandomState::default()),
+            polynomials: Vec::with_capacity(size)
         }
     }
 
     pub fn set(&mut self, symbol: &'a str, polynomial: DVec) {
-        self.polynomials.insert(symbol, polynomial);
+        self.polynomials.push((symbol, polynomial));
     }
 
     pub fn get(&self, symbol: &'a str) -> &DVec {
-        &self.polynomials[symbol]
+        &self.polynomials.iter().find(|(k, _)| {
+            *k == symbol
+        }).unwrap().1
     }
 }
 
@@ -495,18 +507,17 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
     }
 
     pub fn phi_mass_for(&self, element: &'lifespan ElementSpecification, order: usize) -> f64 {
-        let mut phi = 0.0;
-        for (elt, cnt) in self.composition.iter() {
+        let mut phi = self.composition.iter().fold(0.0, |phi, (elt, cnt)| {
             let coef = if elt.element == element.element {
                 cnt - 1
             } else {
                 *cnt
             };
-            phi += self
+            phi + self
                 .constants
                 .nth_element_power_sum(elt.element.symbol.as_ref(), order)
-                * coef as f64;
-        }
+                * coef as f64
+        });
         phi += self
             .constants
             .nth_element_power_sum_mass(element.element.symbol.as_ref(), order);
@@ -515,9 +526,9 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
 
     pub fn phi_values(&self, accumulator: &mut DVec) {
         accumulator.push(0.0);
-        for i in 1..(self.order as usize) + 1 {
+        (1..(self.order as usize + 1)).for_each(|i| {
             accumulator.push(self.phi_for(i));
-        }
+        });
     }
 
     pub fn phi_values_mass(
@@ -526,9 +537,9 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
         accumulator: &mut DVec,
     ) {
         accumulator.push(0.0);
-        for i in 1..(self.order as usize) + 1 {
+        (1..(self.order as usize + 1)).for_each(|i| {
             accumulator.push(self.phi_mass_for(element, i));
-        }
+        });
     }
 
     pub fn probability_vector(&self) -> DVec {
@@ -554,12 +565,12 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
         let mut power_sum = DVec::new();
         let mut ep_map = ElementPolynomialMap::new(self.composition.len());
 
-        for (elt, _cnt) in self.composition.iter() {
+        for (elt, _) in self.composition.iter() {
             power_sum.clear();
             self.phi_values_mass(elt, &mut power_sum);
-            let ele_sym_poly = DVec::new();
+            let elementary_symmetric_polynomial = DVec::with_capacity(power_sum.len());
             let mut param = PolynomialParameters {
-                elementary_symmetric_polynomial: ele_sym_poly,
+                elementary_symmetric_polynomial,
                 power_sum,
             };
             param.newton_optimization(self.max_variants);
@@ -604,7 +615,7 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
         let total: f64 = probability_vector.iter().sum();
         let mut peak_list = PeakList::with_capacity((self.order + 1) as usize);
 
-        for i in 0..self.order as usize + 1 {
+        (0..self.order as usize + 1).for_each(|i| {
             let center_mass_i = center_mass_vector[i];
             let intensity_i = probability_vector[i];
 
@@ -621,14 +632,13 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
             };
 
             if peak.intensity < 1e-10 {
-                continue;
+                return
             }
 
             peak_list.push(peak);
-        }
+        });
 
         peak_list.sort_by(|a, b| a.mz.partial_cmp(&b.mz).unwrap());
-        // average_mass /= total;
         return peak_list;
     }
 }

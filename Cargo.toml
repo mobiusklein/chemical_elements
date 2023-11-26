@@ -41,3 +41,7 @@ test-log = "0.2.12 "
 [[bench]]
 name = "compositions"
 harness = false
+
+[[bench]]
+name = "baffling"
+harness = false
