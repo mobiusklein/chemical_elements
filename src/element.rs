@@ -9,6 +9,11 @@ use serde::{Serialize, Deserialize};
 
 use fnv::FnvBuildHasher as RandomState;
 
+
+type NeutronShiftType = i8;
+type ElementNumberType = u8;
+
+
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
 /** A known isotope of an element with a known number of neutrons,
@@ -18,7 +23,7 @@ pub struct Isotope {
     pub mass: f64,
     pub abundance: f64,
     pub neutrons: u16,
-    pub neutron_shift: i8,
+    pub neutron_shift: NeutronShiftType,
 }
 
 impl fmt::Display for Isotope {
@@ -74,9 +79,9 @@ pub struct Element {
     pub isotopes: HashMap<u16, Isotope, RandomState>,
     pub most_abundant_isotope: u16,
     pub most_abundant_mass: f64,
-    pub min_neutron_shift: i8,
-    pub max_neutron_shift: i8,
-    pub element_number: u8,
+    pub min_neutron_shift: NeutronShiftType,
+    pub max_neutron_shift: NeutronShiftType,
+    pub element_number: ElementNumberType,
 }
 
 impl Element {
@@ -84,7 +89,7 @@ impl Element {
         return self.isotopes[&self.most_abundant_isotope].mass;
     }
 
-    pub fn calc_min_neutron_shift(&self) -> i8 {
+    pub fn calc_min_neutron_shift(&self) -> NeutronShiftType {
         if self.min_neutron_shift != 0 {
             return self.min_neutron_shift;
         }
@@ -94,7 +99,7 @@ impl Element {
         }
     }
 
-    pub fn calc_max_neutron_shift(&self) -> i8 {
+    pub fn calc_max_neutron_shift(&self) -> NeutronShiftType {
         if self.max_neutron_shift != 0 {
             return self.max_neutron_shift;
         }
@@ -104,7 +109,7 @@ impl Element {
         }
     }
 
-    pub fn isotope_by_shift(&self, shift: i8) -> Option<&Isotope> {
+    pub fn isotope_by_shift(&self, shift: NeutronShiftType) -> Option<&Isotope> {
         let num = self.most_abundant_isotope as i16 + shift as i16;
         self.isotopes.get(&(num as u16))
     }

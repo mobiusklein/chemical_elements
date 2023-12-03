@@ -4,16 +4,17 @@ use lazy_static::lazy_static;
 pub fn populate_periodic_table(table: &mut PeriodicTable) {
     let mut elt = Element {
         symbol: String::from("Ac"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 227.000000,
+        most_abundant_isotope: 227,
+        most_abundant_mass: 227.027752,
+        element_number: 113,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        227,
         Isotope {
-            mass: 227.000000,
+            mass: 227.027752,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 227,
             neutron_shift: 0,
         },
     );
@@ -24,7 +25,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ag"),
         most_abundant_isotope: 107,
         most_abundant_mass: 106.905097,
-        element_number: 107,
+        element_number: 53,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -52,7 +53,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Al"),
         most_abundant_isotope: 27,
         most_abundant_mass: 26.981539,
-        element_number: 27,
+        element_number: 13,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -69,16 +70,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Am"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 243.000000,
+        most_abundant_isotope: 243,
+        most_abundant_mass: 243.061381,
+        element_number: 121,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        243,
         Isotope {
-            mass: 243.000000,
+            mass: 243.061381,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 243,
             neutron_shift: 0,
         },
     );
@@ -89,7 +91,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ar"),
         most_abundant_isotope: 40,
         most_abundant_mass: 39.962383,
-        element_number: 40,
+        element_number: 20,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -126,7 +128,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("As"),
         most_abundant_isotope: 75,
         most_abundant_mass: 74.921597,
-        element_number: 75,
+        element_number: 37,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -143,16 +145,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("At"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 210.000000,
+        most_abundant_isotope: 210,
+        most_abundant_mass: 209.987148,
+        element_number: 105,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        210,
         Isotope {
-            mass: 210.000000,
+            mass: 209.987148,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 210,
             neutron_shift: 0,
         },
     );
@@ -163,7 +166,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Au"),
         most_abundant_isotope: 197,
         most_abundant_mass: 196.966569,
-        element_number: 197,
+        element_number: 98,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -182,7 +185,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("B"),
         most_abundant_isotope: 11,
         most_abundant_mass: 11.009305,
-        element_number: 11,
+        element_number: 5,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -210,7 +213,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ba"),
         most_abundant_isotope: 138,
         most_abundant_mass: 137.905247,
-        element_number: 138,
+        element_number: 69,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -283,7 +286,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Be"),
         most_abundant_isotope: 9,
         most_abundant_mass: 9.012182,
-        element_number: 9,
+        element_number: 4,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -300,16 +303,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Bh"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 272.000000,
+        most_abundant_isotope: 272,
+        most_abundant_mass: 272.138030,
+        element_number: 136,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        272,
         Isotope {
-            mass: 272.000000,
+            mass: 272.138030,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 272,
             neutron_shift: 0,
         },
     );
@@ -320,7 +324,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Bi"),
         most_abundant_isotope: 209,
         most_abundant_mass: 208.980399,
-        element_number: 209,
+        element_number: 104,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -337,16 +341,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Bk"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 247.000000,
+        most_abundant_isotope: 247,
+        most_abundant_mass: 247.070307,
+        element_number: 123,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        247,
         Isotope {
-            mass: 247.000000,
+            mass: 247.070307,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 247,
             neutron_shift: 0,
         },
     );
@@ -357,7 +362,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Br"),
         most_abundant_isotope: 79,
         most_abundant_mass: 78.918337,
-        element_number: 79,
+        element_number: 39,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -385,7 +390,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("C"),
         most_abundant_isotope: 12,
         most_abundant_mass: 12.000000,
-        element_number: 12,
+        element_number: 6,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -413,7 +418,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ca"),
         most_abundant_isotope: 40,
         most_abundant_mass: 39.962591,
-        element_number: 40,
+        element_number: 20,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -477,7 +482,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Cd"),
         most_abundant_isotope: 114,
         most_abundant_mass: 113.903358,
-        element_number: 114,
+        element_number: 57,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -559,7 +564,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ce"),
         most_abundant_isotope: 140,
         most_abundant_mass: 139.905439,
-        element_number: 140,
+        element_number: 70,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -603,16 +608,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Cf"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 251.000000,
+        most_abundant_isotope: 251,
+        most_abundant_mass: 251.079587,
+        element_number: 125,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        251,
         Isotope {
-            mass: 251.000000,
+            mass: 251.079587,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 251,
             neutron_shift: 0,
         },
     );
@@ -623,7 +629,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Cl"),
         most_abundant_isotope: 35,
         most_abundant_mass: 34.968853,
-        element_number: 35,
+        element_number: 17,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -649,16 +655,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Cm"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 247.000000,
+        most_abundant_isotope: 247,
+        most_abundant_mass: 247.070354,
+        element_number: 123,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        247,
         Isotope {
-            mass: 247.000000,
+            mass: 247.070354,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 247,
             neutron_shift: 0,
         },
     );
@@ -667,16 +674,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Cn"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 285.000000,
+        most_abundant_isotope: 285,
+        most_abundant_mass: 285.174110,
+        element_number: 142,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        285,
         Isotope {
-            mass: 285.000000,
+            mass: 285.174110,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 285,
             neutron_shift: 0,
         },
     );
@@ -687,7 +695,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Co"),
         most_abundant_isotope: 59,
         most_abundant_mass: 58.933195,
-        element_number: 59,
+        element_number: 29,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -706,7 +714,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Cr"),
         most_abundant_isotope: 52,
         most_abundant_mass: 51.940508,
-        element_number: 52,
+        element_number: 26,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -752,7 +760,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Cs"),
         most_abundant_isotope: 133,
         most_abundant_mass: 132.905452,
-        element_number: 133,
+        element_number: 66,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -771,7 +779,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Cu"),
         most_abundant_isotope: 63,
         most_abundant_mass: 62.929597,
-        element_number: 63,
+        element_number: 31,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -797,16 +805,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Db"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 268.000000,
+        most_abundant_isotope: 268,
+        most_abundant_mass: 268.125450,
+        element_number: 134,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        268,
         Isotope {
-            mass: 268.000000,
+            mass: 268.125450,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 268,
             neutron_shift: 0,
         },
     );
@@ -815,16 +824,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Ds"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 281.000000,
+        most_abundant_isotope: 281,
+        most_abundant_mass: 281.162060,
+        element_number: 140,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        281,
         Isotope {
-            mass: 281.000000,
+            mass: 281.162060,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 281,
             neutron_shift: 0,
         },
     );
@@ -835,7 +845,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Dy"),
         most_abundant_isotope: 164,
         most_abundant_mass: 163.929175,
-        element_number: 164,
+        element_number: 82,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -908,7 +918,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Er"),
         most_abundant_isotope: 166,
         most_abundant_mass: 165.930293,
-        element_number: 166,
+        element_number: 83,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -970,16 +980,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Es"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 252.000000,
+        most_abundant_isotope: 252,
+        most_abundant_mass: 252.082980,
+        element_number: 126,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        252,
         Isotope {
-            mass: 252.000000,
+            mass: 252.082980,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 252,
             neutron_shift: 0,
         },
     );
@@ -990,7 +1001,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Eu"),
         most_abundant_isotope: 153,
         most_abundant_mass: 152.921230,
-        element_number: 153,
+        element_number: 76,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1018,7 +1029,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("F"),
         most_abundant_isotope: 19,
         most_abundant_mass: 18.998403,
-        element_number: 19,
+        element_number: 9,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1037,7 +1048,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Fe"),
         most_abundant_isotope: 56,
         most_abundant_mass: 55.934937,
-        element_number: 56,
+        element_number: 28,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1072,16 +1083,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Fm"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 257.000000,
+        most_abundant_isotope: 257,
+        most_abundant_mass: 257.095105,
+        element_number: 128,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        257,
         Isotope {
-            mass: 257.000000,
+            mass: 257.095105,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 257,
             neutron_shift: 0,
         },
     );
@@ -1090,16 +1102,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Fr"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 223.000000,
+        most_abundant_isotope: 223,
+        most_abundant_mass: 223.019736,
+        element_number: 111,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        223,
         Isotope {
-            mass: 223.000000,
+            mass: 223.019736,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 223,
             neutron_shift: 0,
         },
     );
@@ -1110,7 +1123,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ga"),
         most_abundant_isotope: 69,
         most_abundant_mass: 68.925574,
-        element_number: 69,
+        element_number: 34,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1138,7 +1151,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Gd"),
         most_abundant_isotope: 158,
         most_abundant_mass: 157.924104,
-        element_number: 158,
+        element_number: 79,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1211,7 +1224,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ge"),
         most_abundant_isotope: 74,
         most_abundant_mass: 73.921178,
-        element_number: 74,
+        element_number: 37,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1266,7 +1279,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("H"),
         most_abundant_isotope: 1,
         most_abundant_mass: 1.007825,
-        element_number: 1,
+        element_number: 0,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1294,7 +1307,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("H+"),
         most_abundant_isotope: 1,
         most_abundant_mass: 1.007276,
-        element_number: 1,
+        element_number: 0,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1313,7 +1326,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("He"),
         most_abundant_isotope: 4,
         most_abundant_mass: 4.002603,
-        element_number: 4,
+        element_number: 2,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1341,7 +1354,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Hf"),
         most_abundant_isotope: 180,
         most_abundant_mass: 179.946550,
-        element_number: 180,
+        element_number: 90,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1405,7 +1418,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Hg"),
         most_abundant_isotope: 202,
         most_abundant_mass: 201.970643,
-        element_number: 202,
+        element_number: 101,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1478,7 +1491,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ho"),
         most_abundant_isotope: 165,
         most_abundant_mass: 164.930322,
-        element_number: 165,
+        element_number: 82,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1495,16 +1508,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Hs"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 270.000000,
+        most_abundant_isotope: 270,
+        most_abundant_mass: 270.134650,
+        element_number: 135,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        270,
         Isotope {
-            mass: 270.000000,
+            mass: 270.134650,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 270,
             neutron_shift: 0,
         },
     );
@@ -1515,7 +1529,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("I"),
         most_abundant_isotope: 127,
         most_abundant_mass: 126.904473,
-        element_number: 127,
+        element_number: 63,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1534,7 +1548,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("In"),
         most_abundant_isotope: 115,
         most_abundant_mass: 114.903878,
-        element_number: 115,
+        element_number: 57,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1562,7 +1576,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ir"),
         most_abundant_isotope: 193,
         most_abundant_mass: 192.962926,
-        element_number: 193,
+        element_number: 96,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1590,7 +1604,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("K"),
         most_abundant_isotope: 39,
         most_abundant_mass: 38.963707,
-        element_number: 39,
+        element_number: 19,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1627,7 +1641,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Kr"),
         most_abundant_isotope: 84,
         most_abundant_mass: 83.911507,
-        element_number: 84,
+        element_number: 42,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1691,7 +1705,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("La"),
         most_abundant_isotope: 139,
         most_abundant_mass: 138.906353,
-        element_number: 139,
+        element_number: 69,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1719,7 +1733,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Li"),
         most_abundant_isotope: 7,
         most_abundant_mass: 7.016005,
-        element_number: 7,
+        element_number: 3,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1745,16 +1759,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Lr"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 262.000000,
+        most_abundant_isotope: 262,
+        most_abundant_mass: 262.109630,
+        element_number: 131,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        262,
         Isotope {
-            mass: 262.000000,
+            mass: 262.109630,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 262,
             neutron_shift: 0,
         },
     );
@@ -1765,7 +1780,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Lu"),
         most_abundant_isotope: 175,
         most_abundant_mass: 174.940772,
-        element_number: 175,
+        element_number: 87,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1791,16 +1806,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Md"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 258.000000,
+        most_abundant_isotope: 258,
+        most_abundant_mass: 258.098431,
+        element_number: 129,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        258,
         Isotope {
-            mass: 258.000000,
+            mass: 258.098431,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 258,
             neutron_shift: 0,
         },
     );
@@ -1811,7 +1827,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Mg"),
         most_abundant_isotope: 24,
         most_abundant_mass: 23.985042,
-        element_number: 24,
+        element_number: 12,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1848,7 +1864,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Mn"),
         most_abundant_isotope: 55,
         most_abundant_mass: 54.938045,
-        element_number: 55,
+        element_number: 27,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1867,7 +1883,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Mo"),
         most_abundant_isotope: 98,
         most_abundant_mass: 97.905408,
-        element_number: 98,
+        element_number: 49,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1938,16 +1954,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Mt"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 276.000000,
+        most_abundant_isotope: 276,
+        most_abundant_mass: 276.151160,
+        element_number: 138,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        276,
         Isotope {
-            mass: 276.000000,
+            mass: 276.151160,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 276,
             neutron_shift: 0,
         },
     );
@@ -1958,7 +1975,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("N"),
         most_abundant_isotope: 14,
         most_abundant_mass: 14.003074,
-        element_number: 14,
+        element_number: 7,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -1986,7 +2003,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Na"),
         most_abundant_isotope: 23,
         most_abundant_mass: 22.989769,
-        element_number: 23,
+        element_number: 11,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2005,7 +2022,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Nb"),
         most_abundant_isotope: 93,
         most_abundant_mass: 92.906378,
-        element_number: 93,
+        element_number: 46,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2024,7 +2041,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Nd"),
         most_abundant_isotope: 142,
         most_abundant_mass: 141.907723,
-        element_number: 142,
+        element_number: 71,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2097,7 +2114,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ne"),
         most_abundant_isotope: 20,
         most_abundant_mass: 19.992440,
-        element_number: 20,
+        element_number: 10,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2134,7 +2151,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ni"),
         most_abundant_isotope: 58,
         most_abundant_mass: 57.935343,
-        element_number: 58,
+        element_number: 29,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2187,16 +2204,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("No"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 259.000000,
+        most_abundant_isotope: 259,
+        most_abundant_mass: 259.101030,
+        element_number: 129,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        259,
         Isotope {
-            mass: 259.000000,
+            mass: 259.101030,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 259,
             neutron_shift: 0,
         },
     );
@@ -2205,16 +2223,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Np"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 237.000000,
+        most_abundant_isotope: 237,
+        most_abundant_mass: 237.048173,
+        element_number: 118,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        237,
         Isotope {
-            mass: 237.000000,
+            mass: 237.048173,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 237,
             neutron_shift: 0,
         },
     );
@@ -2225,7 +2244,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("O"),
         most_abundant_isotope: 16,
         most_abundant_mass: 15.994915,
-        element_number: 16,
+        element_number: 8,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2262,7 +2281,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Os"),
         most_abundant_isotope: 192,
         most_abundant_mass: 191.961481,
-        element_number: 192,
+        element_number: 96,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2335,7 +2354,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("P"),
         most_abundant_isotope: 31,
         most_abundant_mass: 30.973762,
-        element_number: 31,
+        element_number: 15,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2354,7 +2373,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Pa"),
         most_abundant_isotope: 231,
         most_abundant_mass: 231.035884,
-        element_number: 231,
+        element_number: 115,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2373,7 +2392,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Pb"),
         most_abundant_isotope: 208,
         most_abundant_mass: 207.976652,
-        element_number: 208,
+        element_number: 104,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2419,7 +2438,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Pd"),
         most_abundant_isotope: 106,
         most_abundant_mass: 105.903486,
-        element_number: 106,
+        element_number: 53,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2481,16 +2500,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Pm"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 145.000000,
+        most_abundant_isotope: 145,
+        most_abundant_mass: 144.912749,
+        element_number: 72,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        145,
         Isotope {
-            mass: 145.000000,
+            mass: 144.912749,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 145,
             neutron_shift: 0,
         },
     );
@@ -2499,16 +2519,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Po"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 209.000000,
+        most_abundant_isotope: 209,
+        most_abundant_mass: 208.982430,
+        element_number: 104,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        209,
         Isotope {
-            mass: 209.000000,
+            mass: 208.982430,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 209,
             neutron_shift: 0,
         },
     );
@@ -2519,7 +2540,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Pr"),
         most_abundant_isotope: 141,
         most_abundant_mass: 140.907653,
-        element_number: 141,
+        element_number: 70,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2538,7 +2559,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Pt"),
         most_abundant_isotope: 195,
         most_abundant_mass: 194.964791,
-        element_number: 195,
+        element_number: 97,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2600,16 +2621,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Pu"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 244.000000,
+        most_abundant_isotope: 244,
+        most_abundant_mass: 244.064204,
+        element_number: 122,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        244,
         Isotope {
-            mass: 244.000000,
+            mass: 244.064204,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 244,
             neutron_shift: 0,
         },
     );
@@ -2618,16 +2640,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Ra"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 226.000000,
+        most_abundant_isotope: 226,
+        most_abundant_mass: 226.025410,
+        element_number: 113,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        226,
         Isotope {
-            mass: 226.000000,
+            mass: 226.025410,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 226,
             neutron_shift: 0,
         },
     );
@@ -2638,7 +2661,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Rb"),
         most_abundant_isotope: 85,
         most_abundant_mass: 84.911790,
-        element_number: 85,
+        element_number: 42,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2666,7 +2689,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Re"),
         most_abundant_isotope: 187,
         most_abundant_mass: 186.955753,
-        element_number: 187,
+        element_number: 93,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2692,16 +2715,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Rf"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 265.000000,
+        most_abundant_isotope: 265,
+        most_abundant_mass: 265.116700,
+        element_number: 132,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        265,
         Isotope {
-            mass: 265.000000,
+            mass: 265.116700,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 265,
             neutron_shift: 0,
         },
     );
@@ -2710,16 +2734,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Rg"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 280.000000,
+        most_abundant_isotope: 280,
+        most_abundant_mass: 280.164470,
+        element_number: 140,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        280,
         Isotope {
-            mass: 280.000000,
+            mass: 280.164470,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 280,
             neutron_shift: 0,
         },
     );
@@ -2730,7 +2755,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Rh"),
         most_abundant_isotope: 103,
         most_abundant_mass: 102.905504,
-        element_number: 103,
+        element_number: 51,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2747,16 +2772,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Rn"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 222.000000,
+        most_abundant_isotope: 222,
+        most_abundant_mass: 222.017578,
+        element_number: 111,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        222,
         Isotope {
-            mass: 222.000000,
+            mass: 222.017578,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 222,
             neutron_shift: 0,
         },
     );
@@ -2767,7 +2793,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ru"),
         most_abundant_isotope: 102,
         most_abundant_mass: 101.904349,
-        element_number: 102,
+        element_number: 51,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2840,7 +2866,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("S"),
         most_abundant_isotope: 32,
         most_abundant_mass: 31.972071,
-        element_number: 32,
+        element_number: 16,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2886,7 +2912,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Sb"),
         most_abundant_isotope: 121,
         most_abundant_mass: 120.903816,
-        element_number: 121,
+        element_number: 60,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2914,7 +2940,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Sc"),
         most_abundant_isotope: 45,
         most_abundant_mass: 44.955912,
-        element_number: 45,
+        element_number: 22,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2933,7 +2959,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Se"),
         most_abundant_isotope: 80,
         most_abundant_mass: 79.916521,
-        element_number: 80,
+        element_number: 40,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -2995,16 +3021,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Sg"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 271.000000,
+        most_abundant_isotope: 271,
+        most_abundant_mass: 271.133470,
+        element_number: 135,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        271,
         Isotope {
-            mass: 271.000000,
+            mass: 271.133470,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 271,
             neutron_shift: 0,
         },
     );
@@ -3015,7 +3042,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Si"),
         most_abundant_isotope: 28,
         most_abundant_mass: 27.976927,
-        element_number: 28,
+        element_number: 14,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3052,7 +3079,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Sm"),
         most_abundant_isotope: 152,
         most_abundant_mass: 151.919732,
-        element_number: 152,
+        element_number: 76,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3125,7 +3152,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Sn"),
         most_abundant_isotope: 120,
         most_abundant_mass: 119.902195,
-        element_number: 120,
+        element_number: 60,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3225,7 +3252,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Sr"),
         most_abundant_isotope: 88,
         most_abundant_mass: 87.905612,
-        element_number: 88,
+        element_number: 44,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3271,7 +3298,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ta"),
         most_abundant_isotope: 181,
         most_abundant_mass: 180.947996,
-        element_number: 181,
+        element_number: 90,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3299,7 +3326,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Tb"),
         most_abundant_isotope: 159,
         most_abundant_mass: 158.925347,
-        element_number: 159,
+        element_number: 79,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3316,16 +3343,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Tc"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 98.000000,
+        most_abundant_isotope: 98,
+        most_abundant_mass: 97.907216,
+        element_number: 49,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        98,
         Isotope {
-            mass: 98.000000,
+            mass: 97.907216,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 98,
             neutron_shift: 0,
         },
     );
@@ -3336,7 +3364,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Te"),
         most_abundant_isotope: 130,
         most_abundant_mass: 129.906224,
-        element_number: 130,
+        element_number: 65,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3418,7 +3446,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Th"),
         most_abundant_isotope: 232,
         most_abundant_mass: 232.038055,
-        element_number: 232,
+        element_number: 116,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3437,7 +3465,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Ti"),
         most_abundant_isotope: 48,
         most_abundant_mass: 47.947946,
-        element_number: 48,
+        element_number: 24,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3492,7 +3520,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Tl"),
         most_abundant_isotope: 205,
         most_abundant_mass: 204.974427,
-        element_number: 205,
+        element_number: 102,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3520,7 +3548,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Tm"),
         most_abundant_isotope: 169,
         most_abundant_mass: 168.934213,
-        element_number: 169,
+        element_number: 84,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3539,7 +3567,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("U"),
         most_abundant_isotope: 238,
         most_abundant_mass: 238.050788,
-        element_number: 238,
+        element_number: 119,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3575,14 +3603,14 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
     let mut elt = Element {
         symbol: String::from("Uuh"),
         most_abundant_isotope: 0,
-        most_abundant_mass: 293.000000,
+        most_abundant_mass: 0.000000,
         ..Default::default()
     };
     elt.isotopes.insert(
         0,
         Isotope {
-            mass: 293.000000,
-            abundance: 1.000000,
+            mass: 0.000000,
+            abundance: 0.000000,
             neutrons: 0,
             neutron_shift: 0,
         },
@@ -3593,14 +3621,14 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
     let mut elt = Element {
         symbol: String::from("Uuo"),
         most_abundant_isotope: 0,
-        most_abundant_mass: 294.000000,
+        most_abundant_mass: 0.000000,
         ..Default::default()
     };
     elt.isotopes.insert(
         0,
         Isotope {
-            mass: 294.000000,
-            abundance: 1.000000,
+            mass: 0.000000,
+            abundance: 0.000000,
             neutrons: 0,
             neutron_shift: 0,
         },
@@ -3610,16 +3638,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Uup"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 288.000000,
+        most_abundant_isotope: 288,
+        most_abundant_mass: 288.192490,
+        element_number: 144,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        288,
         Isotope {
-            mass: 288.000000,
+            mass: 288.192490,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 288,
             neutron_shift: 0,
         },
     );
@@ -3628,16 +3657,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Uuq"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 289.000000,
+        most_abundant_isotope: 289,
+        most_abundant_mass: 289.187280,
+        element_number: 144,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        289,
         Isotope {
-            mass: 289.000000,
+            mass: 289.187280,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 289,
             neutron_shift: 0,
         },
     );
@@ -3646,16 +3676,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Uus"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 292.000000,
+        most_abundant_isotope: 292,
+        most_abundant_mass: 292.207550,
+        element_number: 146,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        292,
         Isotope {
-            mass: 292.000000,
+            mass: 292.207550,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 292,
             neutron_shift: 0,
         },
     );
@@ -3664,16 +3695,17 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
 
     let mut elt = Element {
         symbol: String::from("Uut"),
-        most_abundant_isotope: 0,
-        most_abundant_mass: 284.000000,
+        most_abundant_isotope: 284,
+        most_abundant_mass: 284.178080,
+        element_number: 142,
         ..Default::default()
     };
     elt.isotopes.insert(
-        0,
+        284,
         Isotope {
-            mass: 284.000000,
+            mass: 284.178080,
             abundance: 1.000000,
-            neutrons: 0,
+            neutrons: 284,
             neutron_shift: 0,
         },
     );
@@ -3684,7 +3716,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("V"),
         most_abundant_isotope: 51,
         most_abundant_mass: 50.943959,
-        element_number: 51,
+        element_number: 25,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3712,7 +3744,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("W"),
         most_abundant_isotope: 184,
         most_abundant_mass: 183.950931,
-        element_number: 184,
+        element_number: 92,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3767,7 +3799,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Xe"),
         most_abundant_isotope: 132,
         most_abundant_mass: 131.904154,
-        element_number: 132,
+        element_number: 66,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3858,7 +3890,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Y"),
         most_abundant_isotope: 89,
         most_abundant_mass: 88.905848,
-        element_number: 89,
+        element_number: 44,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3877,7 +3909,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Yb"),
         most_abundant_isotope: 174,
         most_abundant_mass: 173.938862,
-        element_number: 174,
+        element_number: 87,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -3950,7 +3982,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Zn"),
         most_abundant_isotope: 64,
         most_abundant_mass: 63.929142,
-        element_number: 64,
+        element_number: 32,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -4005,7 +4037,7 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
         symbol: String::from("Zr"),
         most_abundant_isotope: 90,
         most_abundant_mass: 89.904704,
-        element_number: 90,
+        element_number: 45,
         ..Default::default()
     };
     elt.isotopes.insert(
@@ -4059,14 +4091,14 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
     let mut elt = Element {
         symbol: String::from("e*"),
         most_abundant_isotope: 0,
-        most_abundant_mass: 0.000549,
+        most_abundant_mass: 0.000000,
         ..Default::default()
     };
     elt.isotopes.insert(
         0,
         Isotope {
-            mass: 0.000549,
-            abundance: 1.000000,
+            mass: 0.000000,
+            abundance: 0.000000,
             neutrons: 0,
             neutron_shift: 0,
         },
