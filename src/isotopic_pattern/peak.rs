@@ -1,14 +1,15 @@
 use std::cmp;
 use std::fmt;
 use std::ops;
+use std::ops::Range;
 
 #[cfg(feature = "serde1")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use crate::mz::{neutral_mass, PROTON};
 
 #[derive(Debug, Clone, Default)]
-#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
 /**A theoretical peak for an isotopic pattern */
 pub struct Peak {
     /// The m/z of the isotopic peak
@@ -146,6 +147,24 @@ impl TheoreticalIsotopicPattern {
         result.normalize()
     }
 
+    /**
+     * Copy a slice of this isotopic pattern and re-normalize it so that slice
+     * sums to 1.0
+     */
+    pub fn slice_normalized(&self, range: Range<usize>) -> Self {
+        let slc = &self.peaks[range];
+        let subset = Self::new(slc.to_vec(), self.origin);
+        subset.normalize()
+    }
+
+    /**
+     * Create an iterator that yields successively right-truncated versions of ``self`` as long as those
+     * truncations cover at least ``threshold`` percent of the original isotopic pattern
+     */
+    pub fn incremental_truncation(self, threshold: f64) -> IncrementalTruncationIter {
+        IncrementalTruncationIter::new(self.normalize(), threshold)
+    }
+
     #[inline]
     /**
     Shift the m/z of each peak in the list by `offset`
@@ -207,7 +226,7 @@ impl TheoreticalIsotopicPattern {
                 break;
             }
         }
-        self.peaks.truncate(stop_index);
+        self.peaks.truncate(stop_index + 1);
         self.normalize()
     }
 
@@ -350,5 +369,101 @@ impl<'a> Iterator for TheoreticalIsotopicPatternIterMut<'a> {
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         return self.iter.next();
+    }
+}
+
+/**
+ * An [`Iterator`] that produces successively truncated versions of a [`TheoreticalIsotopicPattern`]
+ */
+pub struct IncrementalTruncationIter {
+    pub threshold: f64,
+    pub template: TheoreticalIsotopicPattern,
+    index: usize,
+    cumulative: Vec<f64>,
+}
+
+impl IncrementalTruncationIter {
+    pub fn new(template: TheoreticalIsotopicPattern, threshold: f64) -> Self {
+        let cumulative = template.iter().fold(
+            Vec::with_capacity(template.len()),
+            |mut state: Vec<f64>, p| {
+                if state.len() == 0 {
+                    state.push(p.intensity);
+                } else {
+                    state.push(state.last().unwrap() + p.intensity);
+                };
+                state
+            },
+        );
+        let index = template.len().saturating_sub(1);
+        Self {
+            template,
+            threshold,
+            index,
+            cumulative,
+        }
+    }
+}
+
+impl Iterator for IncrementalTruncationIter {
+    type Item = TheoreticalIsotopicPattern;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index > 0 && self.cumulative[self.index] > self.threshold {
+            let result = self.template.slice_normalized(0..self.index + 1);
+            self.index = self.index.saturating_sub(1);
+            Some(result)
+        } else {
+            None
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use crate::isotopic_pattern::poisson_approximation;
+
+    fn make_tid() -> TheoreticalIsotopicPattern {
+        let peaks = TheoreticalIsotopicPattern::new(poisson_approximation(1200.0, 8, 2), 1200.0);
+        peaks
+    }
+
+    #[test]
+    fn test_truncate_after() {
+        let peaks = make_tid();
+        let n = peaks.len();
+
+        let peaks_trunc = peaks.clone().truncate_after(0.95);
+        let nt = peaks_trunc.len();
+
+        let trunc_frac: f64 = peaks.iter().take(nt).map(|p| p.intensity).sum();
+        assert!(trunc_frac >= 0.95);
+        let trunc_frac2: f64 = peaks.iter().take(nt - 1).map(|p| p.intensity).sum();
+        assert!(trunc_frac2 <= 0.95);
+
+        assert_eq!(n, 8);
+        assert_ne!(nt, 3);
+    }
+
+    #[test]
+    fn test_ignore_below() {
+        let peaks = make_tid();
+        let n = peaks.len();
+
+        let peaks_trunc = peaks.clone().ignore_below(0.001);
+        let nt = peaks_trunc.len();
+        assert!(peaks.iter().skip(nt).all(|p| p.intensity <= 0.001));
+
+        assert_eq!(n, 8);
+        assert_eq!(nt, 5);
+    }
+
+    #[test]
+    fn test_incremental_iter() {
+        let peaks = make_tid();
+        let forms: Vec<_> = peaks.incremental_truncation(0.95).collect();
+        assert_eq!(forms.len(), 6);
+        assert_eq!(forms.last().unwrap().len(), 3);
     }
 }
