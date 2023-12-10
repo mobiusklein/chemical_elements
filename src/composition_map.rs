@@ -6,14 +6,14 @@ use std::str::FromStr;
 
 use fnv::FnvBuildHasher;
 
-#[cfg(feature = "serde1")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 use crate::element_specification::{ElementSpecification, ElementSpecificationLike};
 use crate::formula::FormulaParserError;
 
 #[derive(Debug, Clone, Default)]
-#[cfg_attr(feature = "serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /**
 Represents a collection of element-count pairs as found in a flat
 chemical formula. Built atop [`std::collections::HashMap`], and

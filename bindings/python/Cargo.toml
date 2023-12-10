@@ -10,7 +10,7 @@ crate-type = ["cdylib"]
 
 [features]
 
-serde1 = ["chemical_elements/serde1"]
+serde = ["chemical_elements/serde"]
 mzpeaks = ["chemical_elements/mzpeaks"]
 
 [dependencies]

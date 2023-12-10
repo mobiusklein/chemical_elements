@@ -4,7 +4,7 @@ use std::fmt;
 use std::hash;
 use std::ops;
 
-#[cfg(feature = "serde1")]
+#[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize};
 
 use fnv::FnvBuildHasher as RandomState;
@@ -15,7 +15,7 @@ type ElementNumberType = u8;
 
 
 #[derive(Debug, Clone, Default)]
-#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 /** A known isotope of an element with a known number of neutrons,
 mass, and relative abundance
 */
@@ -68,7 +68,7 @@ impl cmp::PartialOrd<Isotope> for Isotope {
 }
 
 #[derive(Debug, Clone, Default)]
-#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 /** A chemical element with known masses and isotopic frequency.
 
 This type forms the foundation of the library, and is *usually*
@@ -158,7 +158,7 @@ impl cmp::PartialEq<Element> for Element {
 }
 
 #[derive(Debug, Clone, Default)]
-#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 /** A mapping connecting [`Element`] to its textual symbol.
 
 This type is referenced indirectly through all other structures

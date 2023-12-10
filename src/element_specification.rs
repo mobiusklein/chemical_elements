@@ -4,7 +4,7 @@ use std::fmt::{self, Display};
 use std::hash;
 use std::str::FromStr;
 
-#[cfg(feature = "serde1")]
+#[cfg(feature = "serde")]
 use serde::{Serialize, Deserialize};
 
 use crate::element::{Element, PeriodicTable};
@@ -44,7 +44,7 @@ impl From<bool> for ElementSpecificationLike {
     }
 }
 
-#[cfg(feature="serde1")]
+#[cfg(feature="serde")]
 mod serialize_element_ref {
     use serde::{Deserializer, Serializer, Deserialize};
 
@@ -69,14 +69,14 @@ mod serialize_element_ref {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature="serde1", derive(Serialize, Deserialize))]
+#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
 /// A hashable key referencing an element with a specific isotope
 /// state. `element` is the [`Element`](crate::Element) represented, and `isotope` is
 /// the isotope number, though 0 means monoisotopic.
 ///
 /// Meant to be used as the keys for [`ChemicalComposition`]
 pub struct ElementSpecification<'element> {
-    #[cfg_attr(feature="serde1", serde(with="serialize_element_ref"))]
+    #[cfg_attr(feature="serde", serde(with="serialize_element_ref"))]
     pub element: &'element Element,
     pub isotope: u16,
 }

@@ -7,8 +7,8 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [features]
-default = ["mzpeaks", "serde1"]
-serde1 = ["chemical_elements/serde", ]
+default = ["mzpeaks", "serde"]
+serde = ["chemical_elements/serde", ]
 mzpeaks = ["chemical_elements/mzpeaks"]
 
 [dependencies]

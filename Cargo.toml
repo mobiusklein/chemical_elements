@@ -20,9 +20,7 @@ name = "chemical_elements"
 
 
 [features]
-default = ["mzpeaks", "serde1"]
-
-serde1 = ["serde"]
+default = ["mzpeaks", "serde"]
 
 [dependencies]
 lazy_static = "1.4.0"
