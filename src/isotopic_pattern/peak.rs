@@ -443,7 +443,7 @@ mod test {
         assert!(trunc_frac2 <= 0.95);
 
         assert_eq!(n, 8);
-        assert_ne!(nt, 3);
+        assert_eq!(nt, 3);
     }
 
     #[test]
