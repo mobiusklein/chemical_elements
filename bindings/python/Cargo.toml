@@ -14,5 +14,5 @@ serde = ["chemical_elements/serde"]
 mzpeaks = ["chemical_elements/mzpeaks"]
 
 [dependencies]
-pyo3 = { version = "0.16.5", features = ["extension-module"] }
+pyo3 = { version = "0.20.2", features = ["extension-module"] }
 chemical_elements = { path = "../../" }

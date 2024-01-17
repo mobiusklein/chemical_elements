@@ -35,13 +35,13 @@ pub enum FormulaOrMapping<'py> {
 
 impl<'source> FromPyObject<'source> for FormulaOrMapping<'source> {
     fn extract(ob: &'source PyAny) -> PyResult<Self> {
-        if ob.is_instance_of::<PyUnicode>()? {
+        if ob.is_instance_of::<PyUnicode>() {
             Ok(FormulaOrMapping::Formula(ob.extract::<String>()?))
-        } else if ob.is_instance_of::<PyChemicalComposition>()? {
+        } else if ob.is_instance_of::<PyChemicalComposition>() {
             let cob = ob.extract()?;
             Ok(FormulaOrMapping::Composition(cob))
         } else if unsafe { PyMapping_Check(ob.into_ptr()) == 1 } && ob.hasattr("items")? {
-            let cob = ob.cast_as::<PyMapping>()?;
+            let cob = ob.downcast::<PyMapping>()?;
             Ok(FormulaOrMapping::Mapping(cob))
         } else {
             Err(PyTypeError::new_err(
@@ -257,7 +257,7 @@ impl From<Peak> for PyPeak {
     }
 }
 
-#[pyfunction(module = "pychemical_elements")]
+#[pyfunction]
 fn isotopic_variants<'a>(
     mut composition: PyChemicalComposition,
     npeaks: i32,
