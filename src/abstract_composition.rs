@@ -6,6 +6,9 @@ use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAss
 use std::slice::{Iter as VecIter, IterMut as VecIterMut};
 use std::str::FromStr;
 
+#[cfg(feature="serde")]
+use serde_with::SerializeDisplay;
+
 use crate::formula::FormulaParser;
 use crate::{
     ChemicalCompositionLike, ChemicalCompositionMap, ChemicalCompositionVec, ElementSpecification,
@@ -13,6 +16,7 @@ use crate::{
 };
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(SerializeDisplay))]
 pub enum ChemicalComposition<'lifespan> {
     Vec(ChemicalCompositionVec<'lifespan>),
     Map(ChemicalCompositionMap<'lifespan>),

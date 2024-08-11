@@ -4,9 +4,6 @@ use std::fmt::{self, Display};
 use std::hash;
 use std::str::FromStr;
 
-#[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
-
 use crate::element::{Element, PeriodicTable};
 use crate::table::PERIODIC_TABLE;
 
@@ -44,39 +41,14 @@ impl From<bool> for ElementSpecificationLike {
     }
 }
 
-#[cfg(feature="serde")]
-mod serialize_element_ref {
-    use serde::{Deserializer, Serializer, Deserialize};
-
-    use crate::Element;
-    use crate::table::PERIODIC_TABLE;
-
-    pub fn serialize<S>(val: &&Element, serializer: S) -> Result<S::Ok, S::Error>  where S: Serializer {
-        serializer.serialize_str(&val.symbol)
-    }
-
-    pub fn deserialize<'de, D>(deserializer: D) -> Result<&'static Element, D::Error> where D: Deserializer<'de> {
-        match String::deserialize(deserializer) {
-            Ok(symbol) => {
-                Ok(&PERIODIC_TABLE[&symbol])
-            },
-            Err(err) => {
-                Err(err)
-            }
-        }
-
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature="serde", derive(serde_with::SerializeDisplay, serde_with::DeserializeFromStr))]
 /// A hashable key referencing an element with a specific isotope
 /// state. `element` is the [`Element`](crate::Element) represented, and `isotope` is
 /// the isotope number, though 0 means monoisotopic.
 ///
 /// Meant to be used as the keys for [`ChemicalComposition`]
 pub struct ElementSpecification<'element> {
-    #[cfg_attr(feature="serde", serde(with="serialize_element_ref"))]
     pub element: &'element Element,
     pub isotope: u16,
 }

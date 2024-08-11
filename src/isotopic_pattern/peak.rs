@@ -105,6 +105,7 @@ mod mzpeaks_interface {
 pub type PeakList = Vec<Peak>;
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /**
 A theoretical isotopic pattern that supports a variety of mutating
 transformations.
@@ -148,8 +149,7 @@ impl TheoreticalIsotopicPattern {
     }
 
     /**
-     * Copy a slice of this isotopic pattern and re-normalize it so that slice
-     * sums to 1.0
+     Copy a slice of this isotopic pattern and re-normalize it so that slice sums to 1.0
      */
     pub fn slice_normalized(&self, range: Range<usize>) -> Self {
         let slc = &self.peaks[range];
@@ -157,10 +157,8 @@ impl TheoreticalIsotopicPattern {
         subset.normalize()
     }
 
-    /**
-     * Create an iterator that yields successively right-truncated versions of ``self`` as long as those
-     * truncations cover at least ``threshold`` percent of the original isotopic pattern
-     */
+    /// Create an iterator that yields successively right-truncated versions of ``self`` as long as those
+    /// truncations cover at least ``threshold`` percent of the original isotopic pattern
     pub fn incremental_truncation(self, threshold: f64) -> IncrementalTruncationIter {
         IncrementalTruncationIter::new(self.normalize(), threshold)
     }
@@ -373,7 +371,7 @@ impl<'a> Iterator for TheoreticalIsotopicPatternIterMut<'a> {
 }
 
 /**
- * An [`Iterator`] that produces successively truncated versions of a [`TheoreticalIsotopicPattern`]
+ An [`Iterator`] that produces successively truncated versions of a [`TheoreticalIsotopicPattern`]
  */
 pub struct IncrementalTruncationIter {
     pub threshold: f64,

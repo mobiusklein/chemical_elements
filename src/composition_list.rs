@@ -4,14 +4,14 @@ use std::slice::{Iter, IterMut};
 use std::str::FromStr;
 
 #[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
+use serde_with::{SerializeDisplay, DeserializeFromStr};
 
 use crate::{FormulaParserError, PERIODIC_TABLE, PeriodicTable};
 use crate::element_specification::{ElementSpecification, ElementSpecificationLike};
 use crate::formula::FormulaParser;
 
 #[derive(Debug, Clone, Default)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(DeserializeFromStr, SerializeDisplay))]
 /**
 Represents a collection of element-count pairs as found in a flat
 chemical formula. Built atop [`std::collections::HashMap`], and
