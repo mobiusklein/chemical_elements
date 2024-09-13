@@ -467,6 +467,7 @@ impl<'inner, 'lifespan: 'inner> IntoIterator for &'inner AbstractChemicalComposi
     }
 }
 
+#[allow(unused)]
 pub trait ChemicalCompositionBehavior<'inner, 'lifespan: 'inner>:
     ChemicalCompositionLike<'inner, 'lifespan> + Default
 where

@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::mz::{neutral_mass, PROTON};
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /**A theoretical peak for an isotopic pattern */
 pub struct Peak {
@@ -138,7 +138,7 @@ impl TheoreticalIsotopicPattern {
             if i == n {
                 break;
             }
-            peaks.push(peak.clone());
+            peaks.push(*peak);
         }
 
         let result = TheoreticalIsotopicPattern {
@@ -241,14 +241,45 @@ impl TheoreticalIsotopicPattern {
         self.normalize()
     }
 
+    pub fn truncate_after_ignore_below_shift_normalize(mut self, truncate_threshold: f64, ignore_below_threshold: f64, shift: f64) -> Self {
+        let mut total = 0.0;
+        let mut stop_index = 0;
+        for (i, p) in self.peaks.iter().enumerate() {
+            total += p.intensity;
+            if total >= truncate_threshold {
+                stop_index = i;
+                break;
+            }
+        }
+
+        self.peaks.truncate(stop_index + 1);
+        let ignore_below_threshold = ignore_below_threshold / total;
+        let mut acc = PeakList::with_capacity(stop_index);
+        for mut peak in self.peaks.into_iter() {
+            if peak.intensity >= ignore_below_threshold {
+                peak.mz += shift;
+                acc.push(peak);
+            } else {
+                total -= peak.intensity;
+            }
+        }
+        self.peaks = acc;
+
+        for peak in self.peaks.iter_mut() {
+            peak.intensity /= total;
+        }
+
+        self
+    }
+
     #[inline]
     pub fn iter(&self) -> TheoreticalIsotopicPatternIter {
-        TheoreticalIsotopicPatternIter::new(self)
+        self.peaks.iter()
     }
 
     #[inline]
     pub fn iter_mut(&mut self) -> TheoreticalIsotopicPatternIterMut {
-        TheoreticalIsotopicPatternIterMut::new(self)
+        self.peaks.iter_mut()
     }
 }
 
@@ -276,12 +307,22 @@ impl ops::Index<usize> for TheoreticalIsotopicPattern {
     }
 }
 
+impl IntoIterator for TheoreticalIsotopicPattern {
+    type Item = Peak;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.peaks.into_iter()
+    }
+}
+
 impl<'a> IntoIterator for &'a TheoreticalIsotopicPattern {
     type Item = &'a Peak;
     type IntoIter = TheoreticalIsotopicPatternIter<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        Self::IntoIter::new(self)
+        self.peaks.iter()
     }
 }
 
@@ -290,7 +331,7 @@ impl<'a> IntoIterator for &'a mut TheoreticalIsotopicPattern {
     type IntoIter = TheoreticalIsotopicPatternIterMut<'a>;
 
     fn into_iter(self) -> Self::IntoIter {
-        Self::IntoIter::new(self)
+        self.peaks.iter_mut()
     }
 }
 
@@ -328,47 +369,8 @@ impl Eq for TheoreticalIsotopicPattern {}
 
 // Iterators
 
-pub struct TheoreticalIsotopicPatternIter<'a> {
-    iter: std::slice::Iter<'a, Peak>,
-}
-
-impl<'a> TheoreticalIsotopicPatternIter<'a> {
-    fn new(peaks: &'a TheoreticalIsotopicPattern) -> TheoreticalIsotopicPatternIter<'a> {
-        return TheoreticalIsotopicPatternIter {
-            iter: peaks.peaks.iter(),
-        };
-    }
-}
-
-impl<'a> Iterator for TheoreticalIsotopicPatternIter<'a> {
-    type Item = &'a Peak;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        return self.iter.next();
-    }
-}
-
-pub struct TheoreticalIsotopicPatternIterMut<'a> {
-    iter: std::slice::IterMut<'a, Peak>,
-}
-
-impl<'a> TheoreticalIsotopicPatternIterMut<'a> {
-    fn new(peaks: &'a mut TheoreticalIsotopicPattern) -> TheoreticalIsotopicPatternIterMut<'a> {
-        return TheoreticalIsotopicPatternIterMut {
-            iter: peaks.peaks.iter_mut(),
-        };
-    }
-}
-
-impl<'a> Iterator for TheoreticalIsotopicPatternIterMut<'a> {
-    type Item = &'a mut Peak;
-
-    #[inline]
-    fn next(&mut self) -> Option<Self::Item> {
-        return self.iter.next();
-    }
-}
+pub type TheoreticalIsotopicPatternIter<'a> = std::slice::Iter<'a, Peak>;
+pub type TheoreticalIsotopicPatternIterMut<'a> = std::slice::IterMut<'a, Peak>;
 
 /**
  An [`Iterator`] that produces successively truncated versions of a [`TheoreticalIsotopicPattern`]
@@ -455,6 +457,16 @@ mod test {
 
         assert_eq!(n, 8);
         assert_eq!(nt, 5);
+    }
+
+    #[test]
+    fn test_truncate_after_ignore_below() {
+        let peaks = make_tid();
+
+        let peaks_trunc = peaks.clone().truncate_after_ignore_below_shift_normalize(0.95, 0.001, 0.0);
+        let peaks_trunc2 = peaks.clone().truncate_after(0.95).ignore_below(0.001);
+
+        assert_eq!(peaks_trunc, peaks_trunc2)
     }
 
     #[test]
