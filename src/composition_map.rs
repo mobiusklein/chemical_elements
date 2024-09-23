@@ -94,11 +94,11 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
         let mut total = 0.0;
         for (elt_spec, count) in &self.composition {
             let element = elt_spec.element;
-            total += if elt_spec.isotope == 0 {
+            total = if elt_spec.isotope == 0 {
                 element.most_abundant_mass
             } else {
                 element.isotopes[&elt_spec.isotope].mass
-            } * (*count as f64);
+            }.mul_add(*count as f64, total);
         }
         return total;
     }
