@@ -472,7 +472,8 @@ mod test {
     #[test]
     fn test_incremental_iter() {
         let peaks = make_tid();
-        let forms: Vec<_> = peaks.incremental_truncation(0.95).collect();
+        let forms: Vec<_> = peaks.clone().incremental_truncation(0.95).collect();
+        assert!(forms.contains(&peaks));
         assert_eq!(forms.len(), 6);
         assert_eq!(forms.last().unwrap().len(), 3);
     }
