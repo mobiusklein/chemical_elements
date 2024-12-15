@@ -1,5 +1,5 @@
 use crate::element::{Element, Isotope, PeriodicTable};
-use lazy_static::lazy_static;
+use std::sync::LazyLock;
 
 pub fn populate_periodic_table(table: &mut PeriodicTable) {
     let mut elt = Element {
@@ -4075,10 +4075,8 @@ pub fn populate_periodic_table(table: &mut PeriodicTable) {
     table.add(elt);
 }
 
-lazy_static! {
-    pub static ref PERIODIC_TABLE: PeriodicTable = {
-        let mut t = PeriodicTable::new();
-        populate_periodic_table(&mut t);
-        t
-    };
-}
+pub static PERIODIC_TABLE: LazyLock<PeriodicTable> = LazyLock::new(|| {
+    let mut t = PeriodicTable::new();
+    populate_periodic_table(&mut t);
+    t
+});
