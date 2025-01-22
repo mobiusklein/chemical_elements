@@ -47,7 +47,7 @@ impl From<bool> for ElementSpecificationLike {
 /// state. `element` is the [`Element`](crate::Element) represented, and `isotope` is
 /// the isotope number, though 0 means monoisotopic.
 ///
-/// Meant to be used as the keys for [`ChemicalComposition`]
+/// Meant to be used as the keys for [`ChemicalCompositionLike`](crate::ChemicalCompositionLike)
 pub struct ElementSpecification<'element> {
     pub element: &'element Element,
     pub isotope: u16,

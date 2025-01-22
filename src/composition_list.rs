@@ -27,7 +27,7 @@ pub struct ChemicalCompositionVec<'a> {
 # Basic Operations
 */
 impl<'transient, 'lifespan: 'transient> ChemicalCompositionVec<'lifespan> {
-    /// Create a new, empty [`ChemicalComposition`]
+    /// Create a new, empty [`ChemicalCompositionVec`]
     pub fn new() -> ChemicalCompositionVec<'lifespan> {
         ChemicalCompositionVec {
             ..Default::default()
@@ -47,12 +47,16 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionVec<'lifespan> {
         }
     }
 
-    fn get_str(&self, elt_str: &str) -> &i32 {
+    fn find_str(&self, elt_str: &str) -> &i32 {
         if let Some((_, c)) = self.composition.iter().find(|(e, _)| e == elt_str) {
             c
         } else {
             &ZERO
         }
+    }
+
+    pub fn get_str(&self, elt_str: &str) -> i32 {
+        *self.find_str(elt_str)
     }
 
     #[inline]
@@ -113,7 +117,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionVec<'lifespan> {
     /**
     # Mass calculation Methods
 
-    [`ChemicalComposition`] has three methods for computing the monoisotopic
+    [`ChemicalCompositionVec`] has three methods for computing the monoisotopic
     mass of the composition it represents to handle mutability.
     */
 
@@ -210,13 +214,13 @@ impl<'lifespan> Index<&str> for ChemicalCompositionVec<'lifespan> {
 
     /**
     Using the [`Index`] trait to access element counts with a [`&str`] is more
-    flexible than [`ChemicalComposition::get_str`], supporting fixed
+    flexible than [`ChemicalCompositionVec::get_str`], supporting fixed
     isotope strings, but does slightly more string checking up-front.
     */
     #[inline]
     fn index(&self, key: &str) -> &Self::Output {
         match ElementSpecification::quick_check_str(key) {
-            ElementSpecificationLike::Yes => self.get_str(key),
+            ElementSpecificationLike::Yes => self.find_str(key),
             ElementSpecificationLike::No => &ZERO,
             ElementSpecificationLike::Maybe => {
                 let spec = key.parse::<ElementSpecification>();

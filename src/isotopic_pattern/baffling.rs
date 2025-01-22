@@ -404,7 +404,7 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
     pub fn from_composition(
         composition: ChemicalComposition<'lifespan>,
         order: i32,
-    ) -> IsotopicDistribution {
+    ) -> IsotopicDistribution<'lifespan, 'lifespan> {
         let mut inst = IsotopicDistribution::fill_from_composition(composition, order);
         inst.populate_constants();
         inst

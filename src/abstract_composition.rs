@@ -1,6 +1,6 @@
 #![allow(unused)]
 use std::collections::hash_map::{Iter as HashMapIter, IterMut as HashMapIterMut};
-use std::iter::FromIterator;
+use std::iter::{FromIterator, FusedIterator};
 use std::marker::PhantomData;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::slice::{Iter as VecIter, IterMut as VecIterMut};
@@ -181,16 +181,16 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalComposition<'lif
     }
 
     pub fn iter(&'inner self) -> Iter<'transient, 'lifespan> {
-        Iter {
-            composition: self,
-            offset: 0,
+        match self {
+            ChemicalComposition::Vec(inner) => Iter::Vec(inner.iter()),
+            ChemicalComposition::Map(inner) => Iter::Map(inner.iter()),
         }
     }
 
     pub fn iter_mut(&'inner mut self) -> IterMut<'transient, 'lifespan> {
-        IterMut {
-            composition: self,
-            offset: 0,
+        match self {
+            ChemicalComposition::Vec(chemical_composition_vec) => IterMut::Vec(chemical_composition_vec.iter_mut()),
+            ChemicalComposition::Map(chemical_composition_map) => IterMut::Map(chemical_composition_map.iter_mut()),
         }
     }
 
@@ -344,65 +344,81 @@ impl<'lifespan> From<Vec<(ElementSpecification<'lifespan>, i32)>>
 
 #[derive(Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct Iter<'inner, 'lifespan: 'inner> {
-    composition: &'inner ChemicalComposition<'lifespan>,
-    offset: usize,
+pub enum Iter<'inner, 'lifespan: 'inner> {
+    Vec(std::slice::Iter<'inner, (ElementSpecification<'lifespan>, i32)>),
+    Map(std::collections::hash_map::Iter<'inner, ElementSpecification<'lifespan>, i32>)
+}
+
+impl<'inner, 'lifespan: 'inner> FusedIterator for Iter<'inner, 'lifespan> {}
+
+impl<'inner, 'lifespan: 'inner> ExactSizeIterator for Iter<'inner, 'lifespan> {
+    fn len(&self) -> usize {
+        match self {
+            Iter::Vec(iter) => iter.len(),
+            Iter::Map(iter) => iter.len(),
+        }
+    }
 }
 
 impl<'inner, 'lifespan: 'inner> Iterator for Iter<'inner, 'lifespan> {
     type Item = (&'inner ElementSpecification<'lifespan>, &'inner i32);
 
     fn next(&mut self) -> Option<Self::Item> {
-        let n = self.composition.len();
-        let offset = self.offset;
-        if offset >= n {
-            return None;
-        }
-        self.offset += 1;
-        match self.composition {
-            ChemicalComposition::Vec(c) => {
-                let item = (&c.get_ref()[offset].0, &c.get_ref()[offset].1);
-                Some(item)
-            }
-            ChemicalComposition::Map(c) => {
-                if let Some((c, v)) = c.iter().nth(offset) {
-                    Some((c, v))
-                } else {
-                    None
-                }
-            }
+        self.next()
+    }
+}
+
+impl<'inner, 'lifespan: 'inner> Iter<'inner, 'lifespan> {
+    fn next(&mut self) -> Option<(&'inner ElementSpecification<'lifespan>, &'inner i32)> {
+        match self {
+            Iter::Vec(iter) => {
+                iter.next().map(|(k, v)| (k, v))
+            },
+            Iter::Map(iter) => {
+                iter.next()
+            },
         }
     }
 }
+
 
 #[derive(Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct IterMut<'inner, 'lifespan: 'inner> {
-    composition: &'inner mut ChemicalComposition<'lifespan>,
-    offset: usize,
+pub enum IterMut<'inner, 'lifespan: 'inner> {
+    Vec(std::slice::IterMut<'inner, (ElementSpecification<'lifespan>, i32)>),
+    Map(std::collections::hash_map::IterMut<'inner, ElementSpecification<'lifespan>, i32>)
 }
 
-impl<'inner, 'lifespan: 'inner> Iterator for IterMut<'inner, 'lifespan> {
-    type Item = (&'inner ElementSpecification<'lifespan>, &'inner mut i32);
+impl<'inner, 'lifespan: 'inner> FusedIterator for IterMut<'inner, 'lifespan> {}
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let n = self.composition.len();
-        let offset = self.offset;
-        if offset >= n {
-            return None;
-        }
-        self.offset += 1;
-        match &mut self.composition {
-            ChemicalComposition::Vec(c) => {
-                let &mut (ref k, ref mut v) = c.iter_mut().nth(offset).unwrap();
-                todo!()
-            }
-            ChemicalComposition::Map(c) => {
-                todo!()
-            }
+impl<'inner, 'lifespan: 'inner> ExactSizeIterator for IterMut<'inner, 'lifespan> {
+    fn len(&self) -> usize {
+        match self {
+            IterMut::Vec(iter_mut) => iter_mut.len(),
+            IterMut::Map(iter_mut) => iter_mut.len(),
         }
     }
 }
+
+impl<'inner, 'lifespan: 'inner> Iterator for IterMut<'inner, 'lifespan> {
+    type Item = (&'inner ElementSpecification<'inner>, &'inner mut i32);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.next()
+    }
+}
+
+impl<'inner, 'lifespan: 'inner> IterMut<'inner, 'lifespan> {
+    fn next(&mut self) -> Option<(&'inner ElementSpecification<'inner>, &'inner mut i32)> {
+        match self {
+            IterMut::Vec(iter_mut) => {
+                iter_mut.next().map(|(k, v)| (&*k, v))
+            },
+            IterMut::Map(iter_mut) => iter_mut.next(),
+        }
+    }
+}
+
 
 impl<'a> FromStr for ChemicalComposition<'a> {
     type Err = FormulaParserError;
@@ -483,10 +499,10 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalCompositionRef<'
         }
     }
 
-    pub fn iter(&'inner self) -> IterRef<'transient, 'lifespan> {
-        IterRef {
-            composition: self,
-            offset: 0,
+    pub fn iter(&'inner self) -> Iter<'inner, 'lifespan> {
+        match self {
+            ChemicalCompositionRef::Vec(chemical_composition_vec) => Iter::Vec(chemical_composition_vec.iter()),
+            ChemicalCompositionRef::Map(chemical_composition_map) => Iter::Map(chemical_composition_map.iter()),
         }
     }
 }
@@ -510,39 +526,6 @@ impl<'a, 'b: 'a> Index<&str> for ChemicalCompositionRef<'a, 'b> {
         match self {
             Self::Vec(c) => c.index(key),
             Self::Map(c) => c.index(key),
-        }
-    }
-}
-
-#[derive(Debug)]
-#[must_use = "iterators are lazy and do nothing unless consumed"]
-pub struct IterRef<'inner, 'lifespan: 'inner> {
-    composition: &'inner ChemicalCompositionRef<'inner, 'lifespan>,
-    offset: usize,
-}
-
-impl<'inner, 'lifespan: 'inner> Iterator for IterRef<'inner, 'lifespan> {
-    type Item = (&'inner ElementSpecification<'lifespan>, &'inner i32);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let n = self.composition.len();
-        let offset = self.offset;
-        if offset >= n {
-            return None;
-        }
-        self.offset += 1;
-        match self.composition {
-            ChemicalCompositionRef::Vec(c) => {
-                let item = (&c.get_ref()[offset].0, &c.get_ref()[offset].1);
-                Some(item)
-            }
-            ChemicalCompositionRef::Map(c) => {
-                if let Some((c, v)) = c.iter().nth(offset) {
-                    Some((c, v))
-                } else {
-                    None
-                }
-            }
         }
     }
 }

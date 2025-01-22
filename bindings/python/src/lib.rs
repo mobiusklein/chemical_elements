@@ -1,7 +1,7 @@
 use std::ops::Index;
 
-use pyo3::ffi::PyMapping_Check;
-use pyo3::types::{PyMapping, PyUnicode};
+use pyo3::types::{PyMapping, PyString, PyTuple};
+use pyo3::PyTypeCheck;
 use pyo3::{
     exceptions::{PyTypeError, PyValueError},
     prelude::*,
@@ -29,19 +29,19 @@ impl<'py> TryFrom<FormulaOrMapping<'py>> for PyChemicalComposition {
 
 pub enum FormulaOrMapping<'py> {
     Formula(String),
-    Mapping(&'py PyMapping),
+    Mapping(pyo3::Bound<'py, PyMapping, >),
     Composition(PyRef<'py, PyChemicalComposition>),
 }
 
 impl<'source> FromPyObject<'source> for FormulaOrMapping<'source> {
-    fn extract(ob: &'source PyAny) -> PyResult<Self> {
-        if ob.is_instance_of::<PyUnicode>() {
+    fn extract_bound(ob: &Bound<'source, PyAny>) -> PyResult<Self> {
+        if ob.is_instance_of::<PyString>() {
             Ok(FormulaOrMapping::Formula(ob.extract::<String>()?))
         } else if ob.is_instance_of::<PyChemicalComposition>() {
             let cob = ob.extract()?;
             Ok(FormulaOrMapping::Composition(cob))
-        } else if unsafe { PyMapping_Check(ob.into_ptr()) == 1 } && ob.hasattr("items")? {
-            let cob = ob.downcast::<PyMapping>()?;
+        } else if PyMapping::type_check(ob) && ob.hasattr("items")? {
+            let cob = ob.clone().downcast_into::<PyMapping>()?;
             Ok(FormulaOrMapping::Mapping(cob))
         } else {
             Err(PyTypeError::new_err(
@@ -56,10 +56,12 @@ impl<'py> FormulaOrMapping<'py> {
         match self {
             FormulaOrMapping::Mapping(value) => {
                 let mut this = ChemicalComposition::default();
-                let items = value.items()?.iter()?;
+                let items = value.items()?;
                 for kve in items {
-                    let kv = kve?;
-                    let (elem_str, count): (&str, i32) = kv.extract()?;
+                    let kv: &Bound<'_, PyTuple> = kve.downcast()?;
+                    let elem_str_py = kv.get_borrowed_item(0)?;
+                    let elem_str = elem_str_py.extract()?;
+                    let count = kv.get_item(1)?.extract()?;
                     this.inc_str(elem_str, count);
                 }
                 Ok(PyChemicalComposition { inner: this })
@@ -88,6 +90,7 @@ impl<'py> FormulaOrMapping<'py> {
 #[pymethods]
 impl PyChemicalComposition {
     #[new]
+    #[pyo3(signature = (formula=None))]
     pub fn new(formula: Option<FormulaOrMapping>) -> PyResult<Self> {
         if let Some(formula) = formula {
             formula.try_into()
@@ -272,7 +275,7 @@ fn isotopic_variants<'a>(
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn pychemical_elements(_py: Python, m: &PyModule) -> PyResult<()> {
+fn pychemical_elements(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(isotopic_variants, m)?)?;
     m.add_class::<PyChemicalComposition>()?;
     m.add_class::<PyPeak>()?;

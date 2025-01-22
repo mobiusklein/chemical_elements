@@ -1,10 +1,10 @@
-/// Approximate the maximum number of isotopic peaks to include in an isotopic distribution
-/// approximation for biomolecules using the Poisson distribution, using the method described
-/// in Bellew et al:
-///
-/// Bellew, M., Coram, M., Fitzgibbon, M., Igra, M., Randolph, T., Wang, P., May, D., Eng, J., Fang, R., Lin, C., Chen, J.,
-/// Goodlett, D., Whiteaker, J., Paulovich, A., & Mcintosh, M. (2006). A suite of algorithms for the comprehensive analysis
-/// of complex protein mixtures using high-resolution LC-MS. 22(15), 1902–1909. https://doi.org/10.1093/bioinformatics/btl276
+//! Approximate the maximum number of isotopic peaks to include in an isotopic distribution
+//! approximation for biomolecules using the Poisson distribution, using the method described
+//! in Bellew et al:
+//!
+//! Bellew, M., Coram, M., Fitzgibbon, M., Igra, M., Randolph, T., Wang, P., May, D., Eng, J., Fang, R., Lin, C., Chen, J.,
+//! Goodlett, D., Whiteaker, J., Paulovich, A., & Mcintosh, M. (2006). A suite of algorithms for the comprehensive analysis
+//! of complex protein mixtures using high-resolution LC-MS. 22(15), 1902–1909. <https://doi.org/10.1093/bioinformatics/btl276>
 
 use super::{Peak, PeakList};
 use crate::mz::{mass_charge_ratio, PROTON};

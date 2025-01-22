@@ -29,7 +29,7 @@ pub struct ChemicalCompositionMap<'a> {
 # Basic Operations
 */
 impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
-    /// Create a new, empty [`ChemicalComposition`]
+    /// Create a new, empty [`ChemicalCompositionMap`]
     pub fn new() -> ChemicalCompositionMap<'lifespan> {
         ChemicalCompositionMap {
             ..Default::default()
@@ -72,7 +72,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
     }
 
     /**
-    Return [`self.composition`], consuming the object
+    Return [`ChemicalCompositionMap::composition`], consuming the object
     */
     pub fn into_inner(self) -> HashMap<ElementSpecification<'lifespan>, i32, FnvBuildHasher> {
         self.composition
@@ -81,7 +81,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
     /**
     # Mass calculation Methods
 
-    [`ChemicalComposition`] has three methods for computing the monoisotopic
+    [`ChemicalCompositionMap`] has three methods for computing the monoisotopic
     mass of the composition it represents to handle mutability.
     */
 
@@ -198,7 +198,7 @@ impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalCompositi
 /**
 # String-based accessors
 
-When performing routine manipulations of a [`ChemicalComposition`] it may
+When performing routine manipulations of a [`ChemicalCompositionMap`] it may
 be both more efficient and easier to write those operations using strings
 or string literals, rather than instantiating an [`ElementSpecification`]
 for each operation. These methods take advantage of the way
@@ -210,7 +210,7 @@ impl<'a> ChemicalCompositionMap<'a> {
     ///
     /// This method does not support fixed isotopes, but may
     /// be faster as it skips element specification parsing and
-    /// [`PeriodicTable`] lookup.
+    /// [`PeriodicTable`](crate::PeriodicTable) lookup.
     pub fn get_str(&self, elt: &str) -> i32 {
         match self.composition.get(elt) {
             Some(c) => *c,
@@ -224,7 +224,7 @@ impl<'a> ChemicalCompositionMap<'a> {
 
     This method does not support fixed isotopes, but may
     be faster as it skips element specification parsing and
-    [`PeriodicTable`] lookup.
+    [`PeriodicTable`](crate::PeriodicTable) lookup.
 
     # Note
     While the borrow checker should stop you from mutating the object
@@ -242,9 +242,9 @@ impl<'a> ChemicalCompositionMap<'a> {
     ///
     /// This method does not support fixed isotopes, but may
     /// be faster as it skips element specification parsing and
-    /// [`PeriodicTable`] lookup, if the element is already in
+    /// [`PeriodicTable`](crate::PeriodicTable) lookup, if the element is already in
     /// the composition. Otherwise, the string is parsed and a new
-    /// [`ElementSpecification`] is created using the default [`PeriodicTable`].
+    /// [`ElementSpecification`] is created using the default [`PeriodicTable`](crate::PeriodicTable).
     ///
     /// # Panics
     /// If a new [`ElementSpecification`] needs to be created and fails,
@@ -271,7 +271,7 @@ impl<'lifespan> Index<&str> for ChemicalCompositionMap<'lifespan> {
 
     /**
     Using the [`Index`] trait to access element counts with a [`&str`] is more
-    flexible than [`ChemicalComposition::get_str`], supporting fixed
+    flexible than [`ChemicalCompositionMap::get_str`], supporting fixed
     isotope strings, but does slightly more string checking up-front.
     */
     #[inline]
