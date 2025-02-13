@@ -42,7 +42,10 @@ impl From<bool> for ElementSpecificationLike {
 }
 
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature="serde", derive(serde_with::SerializeDisplay, serde_with::DeserializeFromStr))]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde_with::SerializeDisplay, serde_with::DeserializeFromStr)
+)]
 /// A hashable key referencing an element with a specific isotope
 /// state. `element` is the [`Element`](crate::Element) represented, and `isotope` is
 /// the isotope number, though 0 means monoisotopic.
@@ -53,39 +56,39 @@ pub struct ElementSpecification<'element> {
     pub isotope: u16,
 }
 
-impl<'a> cmp::PartialEq for ElementSpecification<'a> {
+impl cmp::PartialEq for ElementSpecification<'_> {
     #[inline]
     fn eq(&self, other: &ElementSpecification) -> bool {
         if self.element != other.element {
             return false;
         }
-        return self.isotope == other.isotope;
+        self.isotope == other.isotope
     }
 }
 
-impl<'a> cmp::PartialEq<str> for ElementSpecification<'a> {
+impl cmp::PartialEq<str> for ElementSpecification<'_> {
     #[inline]
     fn eq(&self, other: &str) -> bool {
         self.element.symbol == other && self.isotope == 0
     }
 }
 
-impl<'a> cmp::Eq for ElementSpecification<'a> {}
+impl cmp::Eq for ElementSpecification<'_> {}
 
-impl<'element> hash::Hash for ElementSpecification<'element> {
+impl hash::Hash for ElementSpecification<'_> {
     #[inline]
     fn hash<H: hash::Hasher>(&self, state: &mut H) {
         self.element.hash(state);
     }
 }
 
-impl<'a> Borrow<str> for ElementSpecification<'a> {
+impl Borrow<str> for ElementSpecification<'_> {
     fn borrow(&self) -> &str {
         &self.element.symbol
     }
 }
 
-impl<'element> fmt::Display for ElementSpecification<'element> {
+impl fmt::Display for ElementSpecification<'_> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if self.isotope == 0 {
             f.write_str(&self.element.symbol)
@@ -97,16 +100,7 @@ impl<'element> fmt::Display for ElementSpecification<'element> {
 
 impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element> {
     pub fn new(element: &'element Element, isotope: u16) -> ElementSpecification<'element> {
-        return ElementSpecification { element, isotope };
-    }
-
-    #[inline]
-    pub fn to_string(&self) -> String {
-        if self.isotope == 0 {
-            return format!("{}", self.element.symbol);
-        } else {
-            return format!("{}[{}]", self.element.symbol, self.isotope);
-        }
+        ElementSpecification { element, isotope }
     }
 
     #[inline]
@@ -120,7 +114,7 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
         let n = string.len();
         let mut chars = string.chars();
         if n == 0 {
-            return ElementSpecificationLike::No
+            ElementSpecificationLike::No
         } else if n == 1 {
             let first = chars.nth(0).unwrap();
             (first.is_alphabetic()).into()
@@ -183,18 +177,16 @@ impl<'transient, 'lifespan: 'transient, 'element> ElementSpecification<'element>
     }
 }
 
-
-impl<'a> FromStr for ElementSpecification<'a> {
+impl FromStr for ElementSpecification<'_> {
     type Err = ElementSpecificationParsingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        return match ElementSpecification::parse(s) {
+        match ElementSpecification::parse(s) {
             Ok(r) => Ok(r),
             Err(err) => Err(err),
-        };
+        }
     }
 }
-
 
 #[cfg(test)]
 mod test {

@@ -51,7 +51,7 @@ impl<'source> FromPyObject<'source> for FormulaOrMapping<'source> {
     }
 }
 
-impl<'py> FormulaOrMapping<'py> {
+impl FormulaOrMapping<'_> {
     pub fn convert(&self) -> PyResult<PyChemicalComposition> {
         match self {
             FormulaOrMapping::Mapping(value) => {
@@ -67,7 +67,7 @@ impl<'py> FormulaOrMapping<'py> {
                 Ok(PyChemicalComposition { inner: this })
             }
             FormulaOrMapping::Formula(value) => {
-                if let Ok(inner) = parse_formula(&value) {
+                if let Ok(inner) = parse_formula(value) {
                     let mut this = ChemicalComposition::default();
                     for (k, v) in inner.iter() {
                         let elt = PERIODIC_TABLE.get(&k.element.symbol).unwrap();
@@ -100,7 +100,7 @@ impl PyChemicalComposition {
     }
 
     fn __repr__(&self) -> String {
-        format!("PyChemicalComposition(\"{}\")", self.inner.to_string())
+        format!("PyChemicalComposition(\"{}\")", self.inner)
     }
 
     pub fn __str__(&self) -> String {
@@ -211,11 +211,10 @@ pub struct PyPeak(Peak);
 #[pymethods]
 impl PyPeak {
     #[new]
-    fn new(mz: f64, intensity: f64, charge: i32) -> Self {
+    fn new(mz: f64, intensity: f64) -> Self {
         Self(Peak {
             mz,
             intensity,
-            charge,
         })
     }
 
@@ -239,16 +238,6 @@ impl PyPeak {
         self.0.intensity = value
     }
 
-    #[getter]
-    fn get_charge(&self) -> i32 {
-        self.0.charge
-    }
-
-    #[setter]
-    fn set_charge(&mut self, value: i32) {
-        self.0.charge = value
-    }
-
     fn __repr__(&self) -> String {
         format!("{}", self.0)
     }
@@ -261,7 +250,7 @@ impl From<Peak> for PyPeak {
 }
 
 #[pyfunction]
-fn isotopic_variants<'a>(
+fn isotopic_variants(
     mut composition: PyChemicalComposition,
     npeaks: i32,
     charge: i32,

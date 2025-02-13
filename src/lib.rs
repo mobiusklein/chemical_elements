@@ -31,23 +31,23 @@ assert_eq!(peaks.len(), 6);
 # }
 ```
 */
+mod abstract_composition;
+mod composition_list;
 mod composition_map;
-mod props;
 mod element;
+mod element_specification;
 mod formula;
 mod helper;
 pub mod isotopic_pattern;
 mod mz;
+mod props;
 mod table;
-mod element_specification;
-mod composition_list;
-mod abstract_composition;
 
-pub use crate::element_specification::{ElementSpecification, ElementSpecificationParsingError};
-pub use crate::composition_map::ChemicalCompositionMap as ChemicalCompositionMap;
-pub use crate::composition_list::ChemicalCompositionVec as ChemicalCompositionVec;
 pub use crate::abstract_composition::{ChemicalComposition, ChemicalCompositionRef};
+pub use crate::composition_list::ChemicalCompositionVec;
+pub use crate::composition_map::ChemicalCompositionMap;
 pub use crate::element::{Element, Isotope, PeriodicTable};
+pub use crate::element_specification::{ElementSpecification, ElementSpecificationParsingError};
 pub use crate::formula::{parse_formula, parse_formula_with_table, FormulaParserError};
 pub use crate::mz::{mass_charge_ratio, neutral_mass, PROTON};
 pub use crate::table::PERIODIC_TABLE;

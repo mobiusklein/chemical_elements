@@ -1,13 +1,14 @@
 use std::fmt::Display;
 use std::num::ParseIntError;
 
+use crate::abstract_composition::{ChemicalComposition, ChemicalCompositionRef};
 use crate::table::PERIODIC_TABLE;
 use crate::ElementSpecification;
-use crate::abstract_composition::{ChemicalComposition, ChemicalCompositionRef};
 use crate::{Element, PeriodicTable};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub enum FormulaParserState {
+    #[default]
     New,
     Element,
     Isotope,
@@ -16,12 +17,6 @@ pub enum FormulaParserState {
     Group,
     GroupToGroupCount,
     GroupCount,
-}
-
-impl Default for FormulaParserState {
-    fn default() -> FormulaParserState {
-        FormulaParserState::New
-    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -58,7 +53,7 @@ pub struct FormulaParser {
     pub state: FormulaParserState,
 }
 
-impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
+impl<'transient, 'lifespan: 'transient> FormulaParser {
     pub fn parse(string: &str) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
         let mut parser = Self::default();
         parser.parse_formula_with_table_generic(string, &PERIODIC_TABLE)
@@ -202,7 +197,7 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
                         let elt = self.parse_element_from_string(string, periodic_table);
                         let elt_spec = ElementSpecification {
                             element: elt,
-                            isotope: isotope,
+                            isotope,
                         };
                         acc.inc(elt_spec, count);
                         self.isotope_start = 0;
@@ -235,7 +230,7 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
                             };
                         let elt_spec = ElementSpecification {
                             element: elt,
-                            isotope: isotope,
+                            isotope,
                         };
                         acc.inc(elt_spec, 1);
                         self.isotope_start = 0;
@@ -255,13 +250,10 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
                 }
                 FormulaParserState::GroupToGroupCount => {
                     if !c.is_numeric() {
-                        let group = match Self::parse_with_table(
+                        let group = Self::parse_with_table(
                             &string[self.group_start..self.group_end],
                             periodic_table,
-                        ) {
-                            Ok(grp) => grp,
-                            Err(err) => return Err(err),
-                        };
+                        )?;
                         self.group_start = 0;
                         self.group_end = 0;
                         acc += &group;
@@ -283,13 +275,10 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
                 FormulaParserState::GroupCount => {
                     if !c.is_numeric() {
                         self.group_count_end = i;
-                        let group = match Self::parse_with_table(
+                        let group = Self::parse_with_table(
                             &string[self.group_start..self.group_end],
                             periodic_table,
-                        ) {
-                            Ok(grp) => grp,
-                            Err(err) => return Err(err),
-                        };
+                        )?;
                         self.group_start = 0;
                         self.group_end = 0;
 
@@ -348,29 +337,23 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
                 let elt = self.parse_element_from_string(string, periodic_table);
                 let elt_spec = ElementSpecification {
                     element: elt,
-                    isotope: isotope,
+                    isotope,
                 };
                 acc.inc(elt_spec, count);
             }
             FormulaParserState::GroupToGroupCount => {
-                let group = match Self::parse_with_table(
+                let group = Self::parse_with_table(
                     &string[self.group_start..self.group_end],
                     periodic_table,
-                ) {
-                    Ok(grp) => grp,
-                    Err(err) => return Err(err),
-                };
+                )?;
                 acc += &group;
             }
             FormulaParserState::GroupCount => {
                 self.group_count_end = i;
-                let group = match Self::parse_with_table(
+                let group = Self::parse_with_table(
                     &string[self.group_start..self.group_end],
                     periodic_table,
-                ) {
-                    Ok(grp) => grp,
-                    Err(err) => return Err(err),
-                };
+                )?;
                 self.group_start = 0;
                 self.group_end = 0;
 
@@ -384,285 +367,8 @@ impl<'transient, 'lifespan: 'transient, 'separate> FormulaParser {
             }
             _ => return Err(FormulaParserError::IncompleteFormula),
         }
-        return Ok(acc.into());
+        Ok(acc.into())
     }
-
-    // pub fn parse_formula_with_table(
-    //     &mut self,
-    //     string: &str,
-    //     periodic_table: &'lifespan PeriodicTable,
-    // ) -> Result<ChemicalComposition<'lifespan>, FormulaParserError> {
-    //     let mut acc = ChemicalComposition::new();
-    //     let n = string.len();
-
-    //     for (i, c) in string.char_indices() {
-    //         match self.state {
-    //             FormulaParserState::New => {
-    //                 if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
-    //                     self.element_start = i;
-    //                     self.state = FormulaParserState::Element;
-    //                 } else if c == '(' {
-    //                     self.paren_stack += 1;
-    //                     self.group_start = i + 1;
-    //                     self.state = FormulaParserState::Group;
-    //                 } else {
-    //                     return Err(FormulaParserError::InvalidStart);
-    //                 }
-    //             }
-    //             FormulaParserState::Group => {
-    //                 self.handle_group_state(c, i);
-    //             }
-    //             FormulaParserState::Element => {
-    //                 if c.is_ascii_alphabetic() {
-    //                     if c.is_uppercase() {
-    //                         self.element_end = i;
-    //                         let elt = self.parse_element_from_string(string, periodic_table);
-    //                         let elt_spec = ElementSpecification {
-    //                             element: elt,
-    //                             isotope: 0,
-    //                         };
-    //                         acc.inc(elt_spec, 1);
-    //                         self.state = FormulaParserState::Element;
-    //                         self.element_start = i;
-    //                         self.element_end = 0;
-    //                     }
-    //                 } else if c.is_numeric() {
-    //                     self.element_end = i;
-    //                     self.count_start = i;
-    //                     self.state = FormulaParserState::Count;
-    //                 } else if c == '[' {
-    //                     self.isotope_start = i + 1;
-    //                     self.state = FormulaParserState::Isotope;
-    //                 } else if c == '(' {
-    //                     self.element_end = i;
-    //                     let elt = self.parse_element_from_string(string, periodic_table);
-    //                     let elt_spec = ElementSpecification {
-    //                         element: elt,
-    //                         isotope: 0,
-    //                     };
-    //                     acc.inc(elt_spec, 1);
-
-    //                     self.paren_stack += 1;
-    //                     self.group_start = i + 1;
-    //                     self.state = FormulaParserState::Group;
-    //                 }
-    //             }
-    //             FormulaParserState::Isotope => {
-    //                 if c == ']' {
-    //                     self.isotope_end = i;
-    //                     self.state = FormulaParserState::IsotopeToCount;
-    //                 } else if !c.is_numeric() {
-    //                     return Err(FormulaParserError::IsotopeCountMalformed);
-    //                 }
-    //             }
-    //             FormulaParserState::Count => {
-    //                 if !c.is_numeric() {
-    //                     self.count_end = i;
-    //                     let count_parse = self.parse_element_count(string);
-    //                     let count: i32 = match count_parse {
-    //                         Ok(val) => val,
-    //                         Err(_msg) => {
-    //                             return Err(FormulaParserError::ElementCountMalformed);
-    //                         }
-    //                     };
-    //                     let isotope: u16 = if self.isotope_end != self.isotope_start {
-    //                         match string[self.isotope_start..self.isotope_end].parse::<u16>() {
-    //                             Ok(val) => val,
-    //                             Err(_msg) => {
-    //                                 return Err(FormulaParserError::IsotopeCountMalformed);
-    //                             }
-    //                         }
-    //                     } else {
-    //                         0
-    //                     };
-
-    //                     let elt = self.parse_element_from_string(string, periodic_table);
-    //                     let elt_spec = ElementSpecification {
-    //                         element: elt,
-    //                         isotope: isotope,
-    //                     };
-    //                     acc.inc(elt_spec, count);
-    //                     self.isotope_start = 0;
-    //                     self.isotope_end = 0;
-
-    //                     if c == '(' {
-    //                         self.paren_stack = 1;
-    //                         self.group_start = i + 1;
-    //                         self.state = FormulaParserState::Group;
-    //                     } else if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
-    //                         self.element_start = i;
-    //                         self.state = FormulaParserState::Element;
-    //                     } else {
-    //                         return Err(FormulaParserError::InvalidElement);
-    //                     }
-    //                 }
-    //             }
-    //             FormulaParserState::IsotopeToCount => {
-    //                 if c.is_numeric() {
-    //                     self.count_start = i;
-    //                     self.state = FormulaParserState::Count;
-    //                 } else {
-    //                     let elt = self.parse_element_from_string(string, periodic_table);
-    //                     let isotope: u16 =
-    //                         match string[self.isotope_start..self.isotope_end].parse::<u16>() {
-    //                             Ok(val) => val,
-    //                             Err(_msg) => {
-    //                                 return Err(FormulaParserError::IsotopeCountMalformed);
-    //                             }
-    //                         };
-    //                     let elt_spec = ElementSpecification {
-    //                         element: elt,
-    //                         isotope: isotope,
-    //                     };
-    //                     acc.inc(elt_spec, 1);
-    //                     self.isotope_start = 0;
-    //                     self.isotope_end = 0;
-
-    //                     if c == '(' {
-    //                         self.paren_stack += 1;
-    //                         self.group_start = i + 1;
-    //                         self.state = FormulaParserState::Group;
-    //                     } else if c.is_ascii_uppercase() {
-    //                         self.element_start = i;
-    //                         self.state = FormulaParserState::Element;
-    //                     } else {
-    //                         return Err(FormulaParserError::IsotopeCountMalformed);
-    //                     }
-    //                 }
-    //             }
-    //             FormulaParserState::GroupToGroupCount => {
-    //                 if !c.is_numeric() {
-    //                     let group = match Self::parse_with_table(
-    //                         &string[self.group_start..self.group_end],
-    //                         periodic_table,
-    //                     ) {
-    //                         Ok(grp) => grp,
-    //                         Err(err) => return Err(err),
-    //                     };
-    //                     self.group_start = 0;
-    //                     self.group_end = 0;
-    //                     acc += &group;
-    //                     if c == '(' {
-    //                         self.paren_stack = 1;
-    //                         self.group_start = i + 1;
-    //                         self.state = FormulaParserState::Group;
-    //                     } else if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
-    //                         self.element_start = i;
-    //                         self.state = FormulaParserState::Element;
-    //                     } else {
-    //                         return Err(FormulaParserError::InvalidElement);
-    //                     }
-    //                 } else {
-    //                     self.group_count_start = i;
-    //                     self.state = FormulaParserState::GroupCount;
-    //                 }
-    //             }
-    //             FormulaParserState::GroupCount => {
-    //                 if !c.is_numeric() {
-    //                     self.group_count_end = i;
-    //                     let group = match Self::parse_with_table(
-    //                         &string[self.group_start..self.group_end],
-    //                         periodic_table,
-    //                     ) {
-    //                         Ok(grp) => grp,
-    //                         Err(err) => return Err(err),
-    //                     };
-    //                     self.group_start = 0;
-    //                     self.group_end = 0;
-
-    //                     let group_count: i32 = match self.parse_group_count(string) {
-    //                         Ok(val) => val,
-    //                         Err(_msg) => {
-    //                             return Err(FormulaParserError::ElementCountMalformed);
-    //                         }
-    //                     };
-    //                     acc += &(&group * group_count);
-
-    //                     if c == '(' {
-    //                         self.paren_stack = 1;
-    //                         self.group_start = i + 1;
-    //                         self.state = FormulaParserState::Group;
-    //                     } else if c.is_ascii_alphabetic() && c.is_ascii_uppercase() {
-    //                         self.element_start = i;
-    //                         self.state = FormulaParserState::Element;
-    //                     } else {
-    //                         return Err(FormulaParserError::InvalidElement);
-    //                     }
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     let i = n;
-    //     match self.state {
-    //         FormulaParserState::Element => {
-    //             self.element_end = i;
-    //             let elt = self.parse_element_from_string(string, periodic_table);
-    //             let elt_spec = ElementSpecification {
-    //                 element: elt,
-    //                 isotope: 0,
-    //             };
-    //             acc.inc(elt_spec, 1);
-    //         }
-    //         FormulaParserState::Count => {
-    //             self.count_end = i;
-    //             let count: i32 = match self.parse_element_count(string) {
-    //                 Ok(val) => val,
-    //                 Err(_msg) => {
-    //                     return Err(FormulaParserError::ElementCountMalformed);
-    //                 }
-    //             };
-    //             let isotope: u16 = if self.isotope_end != self.isotope_start {
-    //                 match string[self.isotope_start..self.isotope_end].parse::<u16>() {
-    //                     Ok(val) => val,
-    //                     Err(_msg) => {
-    //                         return Err(FormulaParserError::IsotopeCountMalformed);
-    //                     }
-    //                 }
-    //             } else {
-    //                 0
-    //             };
-    //             let elt = self.parse_element_from_string(string, periodic_table);
-    //             let elt_spec = ElementSpecification {
-    //                 element: elt,
-    //                 isotope: isotope,
-    //             };
-    //             acc.inc(elt_spec, count);
-    //         }
-    //         FormulaParserState::GroupToGroupCount => {
-    //             let group = match Self::parse_with_table(
-    //                 &string[self.group_start..self.group_end],
-    //                 periodic_table,
-    //             ) {
-    //                 Ok(grp) => grp,
-    //                 Err(err) => return Err(err),
-    //             };
-    //             acc += &group;
-    //         }
-    //         FormulaParserState::GroupCount => {
-    //             self.group_count_end = i;
-    //             let group = match Self::parse_with_table(
-    //                 &string[self.group_start..self.group_end],
-    //                 periodic_table,
-    //             ) {
-    //                 Ok(grp) => grp,
-    //                 Err(err) => return Err(err),
-    //             };
-    //             self.group_start = 0;
-    //             self.group_end = 0;
-
-    //             let group_count: i32 = match self.parse_group_count(string) {
-    //                 Ok(val) => val,
-    //                 Err(_msg) => {
-    //                     return Err(FormulaParserError::GroupCountMalformed);
-    //                 }
-    //             };
-    //             acc += &(&group * group_count);
-    //         }
-    //         _ => return Err(FormulaParserError::IncompleteFormula),
-    //     }
-    //     return Ok(acc);
-    // }
 }
 
 pub fn parse_formula<'transient, 'lifespan: 'transient>(
@@ -700,12 +406,10 @@ where
         // Skip the C and N
         if ((key.element.symbol == "C") || (key.element.symbol == "H")) && key.isotope == 0 {
             continue;
+        } else if key.isotope != 0 {
+            result.push_str(&format!("{}[{}]{}", key.element.symbol, key.isotope, count));
         } else {
-            if key.isotope != 0 {
-                result.push_str(&format!("{}[{}]{}", key.element.symbol, key.isotope, count));
-            } else {
-                result.push_str(&format!("{}{}", key.element.symbol, count));
-            }
+            result.push_str(&format!("{}{}", key.element.symbol, count));
         }
     }
     result

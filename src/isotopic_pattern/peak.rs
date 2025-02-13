@@ -6,8 +6,6 @@ use std::ops::Range;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-use crate::mz::{neutral_mass, PROTON};
-
 #[derive(Debug, Clone, Copy, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /**A theoretical peak for an isotopic pattern */
@@ -17,25 +15,21 @@ pub struct Peak {
     /// The theoretical abundance of the isotopic peak, usually expressed as a
     /// percentage of total signal, unless scaled.
     pub intensity: f64,
-    /// The charge state of the isotopic peak
-    pub charge: i32,
 }
 
 impl fmt::Display for Peak {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Peak({}, {}, {})", self.mz, self.intensity, self.charge)
+        write!(f, "Peak({}, {})", self.mz, self.intensity)
     }
 }
 
 impl cmp::PartialEq<Peak> for Peak {
     #[inline]
     fn eq(&self, other: &Peak) -> bool {
-        if (self.mz - other.mz).abs() > 1e-3 {
-            return false;
-        } else if (self.intensity - other.intensity).abs() > 1e-3 {
+        if (self.mz - other.mz).abs() > 1e-3 || (self.intensity - other.intensity).abs() > 1e-3 {
             return false;
         }
-        return true;
+        true
     }
 }
 
@@ -44,7 +38,7 @@ impl Eq for Peak {}
 impl cmp::PartialOrd<Peak> for Peak {
     #[inline]
     fn partial_cmp(&self, other: &Peak) -> Option<cmp::Ordering> {
-        return self.mz.partial_cmp(&other.mz);
+        self.mz.partial_cmp(&other.mz)
     }
 }
 
@@ -57,20 +51,6 @@ impl Peak {
     #[inline]
     pub fn intensity(&self) -> f32 {
         self.intensity as f32
-    }
-
-    #[inline]
-    pub fn charge(&self) -> i32 {
-        self.charge
-    }
-
-    #[inline]
-    pub fn neutral_mass(&self) -> f64 {
-        if self.charge == 0 {
-            self.mz
-        } else {
-            neutral_mass(self.mz, self.charge, PROTON)
-        }
     }
 }
 
@@ -123,7 +103,12 @@ impl TheoreticalIsotopicPattern {
 
     #[inline]
     pub fn len(&self) -> usize {
-        return self.peaks.len();
+        self.peaks.len()
+    }
+
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
+        self.peaks.is_empty()
     }
 
     #[inline]
@@ -149,8 +134,8 @@ impl TheoreticalIsotopicPattern {
     }
 
     /**
-     Copy a slice of this isotopic pattern and re-normalize it so that slice sums to 1.0
-     */
+    Copy a slice of this isotopic pattern and re-normalize it so that slice sums to 1.0
+    */
     pub fn slice_normalized(&self, range: Range<usize>) -> Self {
         let slc = &self.peaks[range];
         let subset = Self::new(slc.to_vec(), self.origin);
@@ -182,7 +167,7 @@ impl TheoreticalIsotopicPattern {
         let n = self.len();
         let mut peaks = PeakList::with_capacity(n);
         for peak in self {
-            let mut shifted = peak.clone();
+            let mut shifted = *peak;
             shifted.mz += offset;
             peaks.push(shifted);
         }
@@ -201,7 +186,7 @@ impl TheoreticalIsotopicPattern {
         for p in self.peaks.iter_mut() {
             p.intensity *= factor;
         }
-        return self;
+        self
     }
 
     #[inline]
@@ -241,7 +226,12 @@ impl TheoreticalIsotopicPattern {
         self.normalize()
     }
 
-    pub fn truncate_after_ignore_below_shift_normalize(mut self, truncate_threshold: f64, ignore_below_threshold: f64, shift: f64) -> Self {
+    pub fn truncate_after_ignore_below_shift_normalize(
+        mut self,
+        truncate_threshold: f64,
+        ignore_below_threshold: f64,
+        shift: f64,
+    ) -> Self {
         let mut total = 0.0;
         let mut stop_index = 0;
         for (i, p) in self.peaks.iter().enumerate() {
@@ -294,7 +284,7 @@ impl fmt::Display for TheoreticalIsotopicPattern {
             }
         }
         write!(f, "])")?;
-        return Ok(());
+        Ok(())
     }
 }
 
@@ -303,7 +293,7 @@ impl ops::Index<usize> for TheoreticalIsotopicPattern {
 
     #[inline]
     fn index(&self, i: usize) -> &Self::Output {
-        return &(self.peaks[i]);
+        &(self.peaks[i])
     }
 }
 
@@ -373,8 +363,8 @@ pub type TheoreticalIsotopicPatternIter<'a> = std::slice::Iter<'a, Peak>;
 pub type TheoreticalIsotopicPatternIterMut<'a> = std::slice::IterMut<'a, Peak>;
 
 /**
- An [`Iterator`] that produces successively truncated versions of a [`TheoreticalIsotopicPattern`]
- */
+An [`Iterator`] that produces successively truncated versions of a [`TheoreticalIsotopicPattern`]
+*/
 pub struct IncrementalTruncationIter {
     pub threshold: f64,
     pub template: TheoreticalIsotopicPattern,
@@ -387,7 +377,7 @@ impl IncrementalTruncationIter {
         let cumulative = template.iter().fold(
             Vec::with_capacity(template.len()),
             |mut state: Vec<f64>, p| {
-                if state.len() == 0 {
+                if state.is_empty() {
                     state.push(p.intensity);
                 } else {
                     state.push(state.last().unwrap() + p.intensity);
@@ -425,8 +415,7 @@ mod test {
     use crate::isotopic_pattern::poisson_approximation;
 
     fn make_tid() -> TheoreticalIsotopicPattern {
-        let peaks = TheoreticalIsotopicPattern::new(poisson_approximation(1200.0, 8, 2), 1200.0);
-        peaks
+        TheoreticalIsotopicPattern::new(poisson_approximation(1200.0, 8, 2), 1200.0)
     }
 
     #[test]
@@ -463,7 +452,9 @@ mod test {
     fn test_truncate_after_ignore_below() {
         let peaks = make_tid();
 
-        let peaks_trunc = peaks.clone().truncate_after_ignore_below_shift_normalize(0.95, 0.001, 0.0);
+        let peaks_trunc = peaks
+            .clone()
+            .truncate_after_ignore_below_shift_normalize(0.95, 0.001, 0.0);
         let peaks_trunc2 = peaks.clone().truncate_after(0.95).ignore_below(0.001);
 
         assert_eq!(peaks_trunc, peaks_trunc2)

@@ -1,12 +1,13 @@
 #![allow(unused)]
 use std::collections::hash_map::{Iter as HashMapIter, IterMut as HashMapIterMut};
+use std::fmt::Display;
 use std::iter::{FromIterator, FusedIterator};
 use std::marker::PhantomData;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::slice::{Iter as VecIter, IterMut as VecIterMut};
 use std::str::FromStr;
 
-#[cfg(feature="serde")]
+#[cfg(feature = "serde")]
 use serde_with::SerializeDisplay;
 
 use crate::formula::FormulaParser;
@@ -33,7 +34,7 @@ impl<'lifespan> PartialEq for ChemicalComposition<'lifespan> {
     }
 }
 
-impl<'lifespan> Default for ChemicalComposition<'lifespan> {
+impl Default for ChemicalComposition<'_> {
     fn default() -> Self {
         ChemicalComposition::Vec(ChemicalCompositionVec::default())
     }
@@ -91,7 +92,7 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalComposition<'lif
         }
     }
 
-    /**
+    /*
     # Mass calculation Methods
 
     [`ChemicalComposition`] has three methods for computing the monoisotopic
@@ -147,14 +148,14 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalComposition<'lif
     #[inline]
     pub(crate) fn _add_from(&mut self, other: &'transient ChemicalCompositionVec<'lifespan>) {
         for (key, val) in other.iter() {
-            self.inc(key.clone(), *val);
+            self.inc(*key, *val);
         }
     }
 
     #[inline]
     pub(crate) fn _sub_from(&mut self, other: &'transient ChemicalCompositionVec<'lifespan>) {
         for (key, val) in other.iter() {
-            self.inc(key.clone(), -(*val));
+            self.inc(*key, -(*val));
         }
     }
 
@@ -189,8 +190,12 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalComposition<'lif
 
     pub fn iter_mut(&'inner mut self) -> IterMut<'transient, 'lifespan> {
         match self {
-            ChemicalComposition::Vec(chemical_composition_vec) => IterMut::Vec(chemical_composition_vec.iter_mut()),
-            ChemicalComposition::Map(chemical_composition_map) => IterMut::Map(chemical_composition_map.iter_mut()),
+            ChemicalComposition::Vec(chemical_composition_vec) => {
+                IterMut::Vec(chemical_composition_vec.iter_mut())
+            }
+            ChemicalComposition::Map(chemical_composition_map) => {
+                IterMut::Map(chemical_composition_map.iter_mut())
+            }
         }
     }
 
@@ -267,7 +272,7 @@ impl<'a> IndexMut<&ElementSpecification<'a>> for ChemicalComposition<'a> {
     }
 }
 
-impl<'a> Index<&str> for ChemicalComposition<'a> {
+impl Index<&str> for ChemicalComposition<'_> {
     type Output = i32;
 
     #[inline]
@@ -279,7 +284,7 @@ impl<'a> Index<&str> for ChemicalComposition<'a> {
     }
 }
 
-impl<'a> IndexMut<&str> for ChemicalComposition<'a> {
+impl IndexMut<&str> for ChemicalComposition<'_> {
     #[inline]
     fn index_mut(&mut self, key: &str) -> &mut Self::Output {
         match self {
@@ -300,7 +305,7 @@ impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalComposition<'lif
             let elt_spec = ElementSpecification::parse(k).unwrap();
             composition.inc(elt_spec, v);
         }
-        return composition;
+        composition
     }
 }
 
@@ -315,10 +320,10 @@ impl<'transient, 'lifespan: 'transient>
     {
         let mut composition = ChemicalComposition::new();
         for (k, v) in iter {
-            let elt_spec = k.clone();
+            let elt_spec = *k;
             composition.inc(elt_spec, *v);
         }
-        return composition;
+        composition
     }
 }
 
@@ -326,7 +331,7 @@ impl<'lifespan> From<Vec<(&'lifespan str, i32)>> for ChemicalComposition<'lifesp
     #[inline]
     fn from(elements: Vec<(&'lifespan str, i32)>) -> Self {
         let composition: ChemicalComposition<'lifespan> = elements.iter().cloned().collect();
-        return composition;
+        composition
     }
 }
 
@@ -338,7 +343,7 @@ impl<'lifespan> From<Vec<(ElementSpecification<'lifespan>, i32)>>
         elements.iter().cloned().for_each(|(k, v)| {
             composition.inc(k, v);
         });
-        return composition;
+        composition
     }
 }
 
@@ -346,7 +351,7 @@ impl<'lifespan> From<Vec<(ElementSpecification<'lifespan>, i32)>>
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 pub enum Iter<'inner, 'lifespan: 'inner> {
     Vec(std::slice::Iter<'inner, (ElementSpecification<'lifespan>, i32)>),
-    Map(std::collections::hash_map::Iter<'inner, ElementSpecification<'lifespan>, i32>)
+    Map(std::collections::hash_map::Iter<'inner, ElementSpecification<'lifespan>, i32>),
 }
 
 impl<'inner, 'lifespan: 'inner> FusedIterator for Iter<'inner, 'lifespan> {}
@@ -371,22 +376,17 @@ impl<'inner, 'lifespan: 'inner> Iterator for Iter<'inner, 'lifespan> {
 impl<'inner, 'lifespan: 'inner> Iter<'inner, 'lifespan> {
     fn next(&mut self) -> Option<(&'inner ElementSpecification<'lifespan>, &'inner i32)> {
         match self {
-            Iter::Vec(iter) => {
-                iter.next().map(|(k, v)| (k, v))
-            },
-            Iter::Map(iter) => {
-                iter.next()
-            },
+            Iter::Vec(iter) => iter.next().map(|(k, v)| (k, v)),
+            Iter::Map(iter) => iter.next(),
         }
     }
 }
-
 
 #[derive(Debug)]
 #[must_use = "iterators are lazy and do nothing unless consumed"]
 pub enum IterMut<'inner, 'lifespan: 'inner> {
     Vec(std::slice::IterMut<'inner, (ElementSpecification<'lifespan>, i32)>),
-    Map(std::collections::hash_map::IterMut<'inner, ElementSpecification<'lifespan>, i32>)
+    Map(std::collections::hash_map::IterMut<'inner, ElementSpecification<'lifespan>, i32>),
 }
 
 impl<'inner, 'lifespan: 'inner> FusedIterator for IterMut<'inner, 'lifespan> {}
@@ -411,16 +411,13 @@ impl<'inner, 'lifespan: 'inner> Iterator for IterMut<'inner, 'lifespan> {
 impl<'inner, 'lifespan: 'inner> IterMut<'inner, 'lifespan> {
     fn next(&mut self) -> Option<(&'inner ElementSpecification<'inner>, &'inner mut i32)> {
         match self {
-            IterMut::Vec(iter_mut) => {
-                iter_mut.next().map(|(k, v)| (&*k, v))
-            },
+            IterMut::Vec(iter_mut) => iter_mut.next().map(|(k, v)| (&*k, v)),
             IterMut::Map(iter_mut) => iter_mut.next(),
         }
     }
 }
 
-
-impl<'a> FromStr for ChemicalComposition<'a> {
+impl FromStr for ChemicalComposition<'_> {
     type Err = FormulaParserError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -429,9 +426,9 @@ impl<'a> FromStr for ChemicalComposition<'a> {
     }
 }
 
-impl<'lifespan> ToString for ChemicalComposition<'lifespan> {
-    fn to_string(&self) -> String {
-        crate::formula::to_formula(self)
+impl Display for ChemicalComposition<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&crate::formula::to_formula(self))
     }
 }
 
@@ -441,7 +438,7 @@ pub enum ChemicalCompositionRef<'inner, 'lifespan: 'inner> {
     Map(&'inner ChemicalCompositionMap<'lifespan>),
 }
 
-impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalCompositionRef<'inner, 'lifespan> {
+impl<'inner, 'lifespan: 'inner> ChemicalCompositionRef<'inner, 'lifespan> {
     #[inline]
     /// Access a specific element's count, or `0` if that element is absent
     /// from the composition
@@ -501,8 +498,12 @@ impl<'transient, 'inner: 'transient, 'lifespan: 'inner> ChemicalCompositionRef<'
 
     pub fn iter(&'inner self) -> Iter<'inner, 'lifespan> {
         match self {
-            ChemicalCompositionRef::Vec(chemical_composition_vec) => Iter::Vec(chemical_composition_vec.iter()),
-            ChemicalCompositionRef::Map(chemical_composition_map) => Iter::Map(chemical_composition_map.iter()),
+            ChemicalCompositionRef::Vec(chemical_composition_vec) => {
+                Iter::Vec(chemical_composition_vec.iter())
+            }
+            ChemicalCompositionRef::Map(chemical_composition_map) => {
+                Iter::Map(chemical_composition_map.iter())
+            }
         }
     }
 }
@@ -564,11 +565,11 @@ mod test {
     #[test]
     fn test_parse() {
         let case: ChemicalComposition = "H2O".parse().expect("Failed to parse");
-        eprintln!("{}", case.to_string());
+        eprintln!("{}", case);
         let mut ctrl = ChemicalComposition::new();
         ctrl.set(("O").parse::<ElementSpecification>().unwrap(), 1);
         ctrl.set(("H").parse::<ElementSpecification>().unwrap(), 2);
-        eprintln!("{}", ctrl.to_string());
+        eprintln!("{}", ctrl);
         assert_eq!(case, ctrl);
         let case: ChemicalComposition = "H2O1".parse().expect("Failed to parse");
         assert_eq!(case, ctrl);

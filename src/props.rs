@@ -1,12 +1,14 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Neg};
+use std::ops::{Add, AddAssign, Mul, MulAssign, Neg, Sub, SubAssign};
 
-use crate::element_specification::ElementSpecification;
-use crate::composition_map::ChemicalCompositionMap as ChemicalCompositionMap;
+use crate::abstract_composition::{
+    ChemicalComposition as AbstractChemicalComposition, Iter as AbstractIter,
+    IterMut as AbstractIterMut,
+};
 use crate::composition_list::ChemicalCompositionVec;
-use crate::abstract_composition::{ChemicalComposition as AbstractChemicalComposition, Iter as AbstractIter, IterMut as AbstractIterMut};
+use crate::composition_map::ChemicalCompositionMap;
+use crate::element_specification::ElementSpecification;
 
 pub trait ChemicalCompositionLike<'inner, 'lifespan: 'inner> {
-
     /// Access a specific element's count, or `0` if that element is absent
     /// from the composition
     fn get(&self, elt_spec: &ElementSpecification<'lifespan>) -> i32;
@@ -22,7 +24,7 @@ pub trait ChemicalCompositionLike<'inner, 'lifespan: 'inner> {
         self.set(elt_spec, val);
     }
 
-    /**
+    /*
     # Mass calculation Methods
 
     [`ChemicalCompositionLike`] has three methods for computing the monoisotopic
@@ -53,17 +55,15 @@ pub trait ChemicalCompositionLike<'inner, 'lifespan: 'inner> {
     fn iter_mut(&mut self) -> AbstractIterMut<'_, 'lifespan>;
 
     fn _mul_by(&mut self, scaler: i32) {
-        for (_, v)  in self.iter_mut() {
+        for (_, v) in self.iter_mut() {
             *v *= scaler;
         }
     }
 }
 
-
 impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lifespan>
     for ChemicalCompositionVec<'lifespan>
 {
-
     fn get(&self, elt_spec: &ElementSpecification<'lifespan>) -> i32 {
         self.get(elt_spec)
     }
@@ -108,7 +108,6 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lif
 impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lifespan>
     for ChemicalCompositionMap<'lifespan>
 {
-
     fn get(&self, elt_spec: &ElementSpecification<'lifespan>) -> i32 {
         self.get(elt_spec)
     }
@@ -153,7 +152,6 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lif
 impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lifespan>
     for AbstractChemicalComposition<'lifespan>
 {
-
     fn get(&self, elt_spec: &ElementSpecification<'lifespan>) -> i32 {
         self.get(elt_spec)
     }
@@ -186,10 +184,10 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionLike<'transient, 'lif
         match self {
             AbstractChemicalComposition::Vec(c) => {
                 *c *= scaler;
-            },
+            }
             AbstractChemicalComposition::Map(c) => {
                 *c *= scaler;
-            },
+            }
         }
     }
 
@@ -216,12 +214,30 @@ macro_rules! impl_from {
     };
 }
 
-impl_from!(ChemicalCompositionMap<'lifespan>, ChemicalCompositionVec<'lifespan>);
-impl_from!(ChemicalCompositionVec<'lifespan>, ChemicalCompositionMap<'lifespan>);
-impl_from!(AbstractChemicalComposition<'lifespan>, ChemicalCompositionVec<'lifespan>);
-impl_from!(AbstractChemicalComposition<'lifespan>, ChemicalCompositionMap<'lifespan>);
-impl_from!(ChemicalCompositionVec<'lifespan>, AbstractChemicalComposition<'lifespan>);
-impl_from!(ChemicalCompositionMap<'lifespan>, AbstractChemicalComposition<'lifespan>);
+impl_from!(
+    ChemicalCompositionMap<'lifespan>,
+    ChemicalCompositionVec<'lifespan>
+);
+impl_from!(
+    ChemicalCompositionVec<'lifespan>,
+    ChemicalCompositionMap<'lifespan>
+);
+impl_from!(
+    AbstractChemicalComposition<'lifespan>,
+    ChemicalCompositionVec<'lifespan>
+);
+impl_from!(
+    AbstractChemicalComposition<'lifespan>,
+    ChemicalCompositionMap<'lifespan>
+);
+impl_from!(
+    ChemicalCompositionVec<'lifespan>,
+    AbstractChemicalComposition<'lifespan>
+);
+impl_from!(
+    ChemicalCompositionMap<'lifespan>,
+    AbstractChemicalComposition<'lifespan>
+);
 
 macro_rules! impl_arithmetic {
     ($tp:ty) => {
@@ -386,7 +402,6 @@ macro_rules! impl_arithmetic {
             }
         }
     };
-
 }
 
 impl_arithmetic!(ChemicalCompositionMap<'lifespan>);

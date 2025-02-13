@@ -5,7 +5,7 @@ use std::collections::hash_map::Entry;
 use std::collections::HashMap;
 
 use crate::element::Element;
-use crate::isotopic_pattern::{Peak, PeakList, poisson_approximate_n_peaks_of};
+use crate::isotopic_pattern::{poisson_approximate_n_peaks_of, Peak, PeakList};
 use crate::{mass_charge_ratio, ChemicalComposition, ElementSpecification};
 
 use fnv::FnvBuildHasher as RandomState;
@@ -18,10 +18,9 @@ pub struct ElementRegistry {
     counter: usize,
 }
 
-
-impl<'element> ElementRegistry {
+impl ElementRegistry {
     pub fn new(store: HashMap<String, usize, RandomState>) -> Self {
-        let counter = if store.len() > 0 {
+        let counter = if !store.is_empty() {
             store.values().max().unwrap() + 1
         } else {
             0
@@ -31,14 +30,12 @@ impl<'element> ElementRegistry {
     }
 
     pub fn get(&self, element_name: &str) -> Option<usize> {
-        self.store.get(element_name).and_then(|v| {
-            Some(*v)
-        })
+        self.store.get(element_name).copied()
     }
 
     pub fn register(&mut self, element_name: &str) -> usize {
         if let Some(val) = self.store.get(element_name) {
-            return *val
+            return *val;
         }
 
         let val = self.counter;
@@ -48,14 +45,11 @@ impl<'element> ElementRegistry {
     }
 }
 
-
-
 #[derive(Debug, Clone, Copy)]
-pub struct ElementKey<'a>{
+pub struct ElementKey<'a> {
     pub element: &'a Element,
-    pub key: usize
+    pub key: usize,
 }
-
 
 #[derive(Debug, Clone)]
 pub struct PolynomialParameters {
@@ -72,7 +66,7 @@ pub fn vietes(coefficients: &DVec) -> DVec {
         let el = sign * coefficients[n - i - 1] / tail;
         esp.push(el);
     }
-    return esp;
+    esp
 }
 
 impl PolynomialParameters {
@@ -100,17 +94,21 @@ impl PolynomialParameters {
     pub fn update_elementary_symmetric_polynomial(&mut self, order: i32) {
         let begin = self.elementary_symmetric_polynomial.len();
         let end = self.power_sum.len();
-        self.elementary_symmetric_polynomial.reserve(end.saturating_sub(begin));
+        self.elementary_symmetric_polynomial
+            .reserve(end.saturating_sub(begin));
         for k in begin..end {
             if k == 0 {
                 self.elementary_symmetric_polynomial.push(1.0);
             } else if k > (order as usize) {
                 self.elementary_symmetric_polynomial.push(0.0);
             } else {
-                let el = (1..k + 1).into_iter().map(|j| {
-                    let sign = if (j % 2) == 1 { 1.0 } else { -1.0 };
-                    return sign * self.power_sum[j] * self.elementary_symmetric_polynomial[k - j]
-                }).sum::<f64>() / k as f64;
+                let el = (1..k + 1)
+                    .map(|j| {
+                        let sign = if (j % 2) == 1 { 1.0 } else { -1.0 };
+                        sign * self.power_sum[j] * self.elementary_symmetric_polynomial[k - j]
+                    })
+                    .sum::<f64>()
+                    / k as f64;
                 self.elementary_symmetric_polynomial.push(el);
             }
         }
@@ -119,10 +117,11 @@ impl PolynomialParameters {
     pub fn newton_optimization(&mut self, order: i32) {
         let psn = self.power_sum.len();
         let espn = self.elementary_symmetric_polynomial.len();
-        if psn > espn {
-            self.update_elementary_symmetric_polynomial(order);
-        } else if psn < espn {
-            self.update_power_sum();
+
+        match psn.cmp(&espn) {
+            cmp::Ordering::Less => self.update_power_sum(),
+            cmp::Ordering::Equal => {}
+            cmp::Ordering::Greater => self.update_elementary_symmetric_polynomial(order),
         }
     }
 
@@ -144,15 +143,17 @@ impl PolynomialParameters {
             };
             let current_order = (max_isotope_number - isotope.neutron_shift) as usize;
             let coef = if with_mass { isotope.mass } else { 1.0 };
-            if current_order > accumulator.len() {
-                for _j in accumulator.len()..(current_order) {
-                    accumulator.push(0.0);
+            match current_order.cmp(&accumulator.len()) {
+                cmp::Ordering::Greater => {
+                    for _j in accumulator.len()..(current_order) {
+                        accumulator.push(0.0);
+                    }
+                    accumulator.push(coef * isotope.abundance);
                 }
-                accumulator.push(coef * isotope.abundance);
-            } else if current_order == accumulator.len() {
-                accumulator.push(coef * isotope.abundance);
-            } else {
-                panic!("Error! Unordered isotopes for {}", element.symbol);
+                cmp::Ordering::Equal => {
+                    accumulator.push(coef * isotope.abundance);
+                }
+                cmp::Ordering::Less => panic!("Error! Unordered isotopes for {}", element.symbol),
             }
         }
     }
@@ -174,7 +175,7 @@ impl PolynomialParameters {
             power_sum,
         };
         result.newton_optimization(order as i32);
-        return result;
+        result
     }
 }
 
@@ -194,12 +195,12 @@ impl PhiConstants {
             PolynomialParameters::from_element(element, false, &mut accumulator);
         accumulator.clear();
         let mass_coefficients = PolynomialParameters::from_element(element, true, &mut accumulator);
-        return PhiConstants {
+        PhiConstants {
             element_key: element.symbol.clone(),
             order,
             element_coefficients,
             mass_coefficients,
-        };
+        }
     }
 
     pub fn from_element_key(element_key: &ElementKey) -> PhiConstants {
@@ -208,16 +209,16 @@ impl PhiConstants {
         let element_coefficients =
             PolynomialParameters::from_element(element_key.element, false, &mut accumulator);
         accumulator.clear();
-        let mass_coefficients = PolynomialParameters::from_element(element_key.element, true, &mut accumulator);
-        return PhiConstants {
+        let mass_coefficients =
+            PolynomialParameters::from_element(element_key.element, true, &mut accumulator);
+        PhiConstants {
             element_key: element_key.element.symbol.clone(),
             order,
             element_coefficients,
             mass_coefficients,
-        };
+        }
     }
 }
-
 
 pub type PhiKey = str;
 
@@ -239,11 +240,10 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
 
     pub fn get(&self, symbol: &PhiKey) -> Option<&PhiConstants> {
         // self.constants.get(symbol)
-        self.constants.iter().find(|(k, _)| {
-            *k == symbol
-        }).and_then(|(_, v)| {
-            Some(v)
-        })
+        self.constants
+            .iter()
+            .find(|(k, _)| *k == symbol)
+            .map(|(_, v)| v)
     }
 
     pub fn set(&mut self, symbol: &'lifespan PhiKey, constants: PhiConstants) {
@@ -252,9 +252,8 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
     }
 
     pub fn add(&mut self, element: &'outer Element) {
-        match self.get(element.symbol.as_ref()) {
-            Some(_c) => return,
-            None => {}
+        if let Some(_c) = self.get(element.symbol.as_ref()) {
+            return;
         };
 
         let phi = PhiConstants::from_element(element);
@@ -316,11 +315,11 @@ pub struct IsotopicConstantsCache<'lifespan> {
     pub cache: HashMap<&'lifespan PhiKey, PhiConstants, RandomState>,
 }
 
-impl<'lifespan, 'outer: 'lifespan> IsotopicConstantsCache<'lifespan> {
+impl<'lifespan> IsotopicConstantsCache<'lifespan> {
     pub fn new() -> IsotopicConstantsCache<'lifespan> {
-        return IsotopicConstantsCache {
+        IsotopicConstantsCache {
             cache: HashMap::with_capacity_and_hasher(6, RandomState::default()),
-        };
+        }
     }
 
     pub fn checkout(&mut self, symbol: &PhiKey) -> Option<PhiConstants> {
@@ -352,6 +351,12 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstantsCache<'lifespan> {
     }
 }
 
+impl Default for IsotopicConstantsCache<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub fn max_variants(composition: &ChemicalComposition) -> i32 {
     let acc = composition
         .iter()
@@ -365,17 +370,17 @@ pub fn guess_npeaks(composition: &ChemicalComposition, max_npeaks: i32) -> i32 {
     // let npeaks = (total_variants as f64).sqrt() as i32 - 2;
     // let result = cmp::min(cmp::max(npeaks, 3), max_npeaks);
     let result = poisson_approximate_n_peaks_of(composition.mass(), 0.9999) as i32;
-    return result.min(max_npeaks);
+    result.min(max_npeaks)
 }
 
 struct ElementPolynomialMap<'a> {
-    pub polynomials: Vec<(&'a str, DVec)>
+    pub polynomials: Vec<(&'a str, DVec)>,
 }
 
 impl<'a> ElementPolynomialMap<'a> {
     pub fn new(size: usize) -> ElementPolynomialMap<'a> {
         ElementPolynomialMap {
-            polynomials: Vec::with_capacity(size)
+            polynomials: Vec::with_capacity(size),
         }
     }
 
@@ -384,9 +389,12 @@ impl<'a> ElementPolynomialMap<'a> {
     }
 
     pub fn get(&self, symbol: &'a str) -> &DVec {
-        &self.polynomials.iter().find(|(k, _)| {
-            *k == symbol
-        }).unwrap().1
+        &self
+            .polynomials
+            .iter()
+            .find(|(k, _)| *k == symbol)
+            .unwrap()
+            .1
     }
 }
 
@@ -423,7 +431,6 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
             monoisotopic_peak: Peak {
                 mz: 0.0,
                 intensity: 0.0,
-                charge: 0,
             },
         };
         inst.update_order(order);
@@ -475,11 +482,7 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
                 .ln();
         }
         intensity = intensity.exp();
-        return Peak {
-            mz,
-            intensity: intensity,
-            charge: 0,
-        };
+        Peak { mz, intensity }
     }
 
     pub fn update_order(&mut self, order: i32) {
@@ -501,7 +504,7 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
                 .nth_element_power_sum(element.symbol.as_ref(), order)
                 * (*cnt as f64);
         }
-        return phi;
+        phi
     }
 
     pub fn phi_mass_for(&self, element: &'lifespan ElementSpecification, order: usize) -> f64 {
@@ -519,7 +522,7 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
         phi += self
             .constants
             .nth_element_power_sum_mass(element.element.symbol.as_ref(), order);
-        return phi;
+        phi
     }
 
     pub fn phi_values(&self, accumulator: &mut DVec) {
@@ -556,7 +559,7 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
             let sign = if i % 2 == 0 { 1.0 } else { -1.0 };
             params.elementary_symmetric_polynomial[i] *= self.monoisotopic_peak.intensity * sign;
         }
-        return params.elementary_symmetric_polynomial;
+        params.elementary_symmetric_polynomial
     }
 
     fn build_polynomial_map(&self) -> ElementPolynomialMap {
@@ -578,7 +581,7 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
                 param.elementary_symmetric_polynomial,
             );
         }
-        return ep_map;
+        ep_map
     }
 
     pub fn center_mass_vector(&self, probability_vector: &DVec) -> DVec {
@@ -603,7 +606,7 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
                 mass_vector.push(center / probability_vector[i]);
             }
         }
-        return mass_vector;
+        mass_vector
     }
 
     pub fn isotopic_variants(&self, charge: i32, charge_carrier: f64) -> PeakList {
@@ -626,18 +629,17 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
             let peak = Peak {
                 mz: adjusted_mz,
                 intensity: intensity_i / total,
-                charge: charge,
             };
 
             if peak.intensity < 1e-10 {
-                return
+                return;
             }
 
             peak_list.push(peak);
         });
 
         peak_list.sort_by(|a, b| a.mz.partial_cmp(&b.mz).unwrap());
-        return peak_list;
+        peak_list
     }
 }
 
@@ -647,19 +649,69 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
 /// if `npeaks` is 0, a guess will be used.
 pub fn isotopic_variants<'a, C: Into<ChemicalComposition<'a>>>(
     composition: C,
-    npeaks: i32,
+    npeaks: impl Into<NumPeaksSpec>,
     charge: i32,
     charge_carrier: f64,
 ) -> PeakList {
     let composition = composition.into();
-    let npeaks = if npeaks == 0 {
-        guess_npeaks(&composition, 300)
-    } else {
-        npeaks - 1
-    };
+    let npeaks = npeaks.into().num_peaks(&composition);
 
     let dist = IsotopicDistribution::from_composition(composition, npeaks);
     dist.isotopic_variants(charge, charge_carrier)
+}
+
+#[derive(Debug, Default, Clone, Copy, PartialEq)]
+pub enum NumPeaksSpec {
+    #[default]
+    Guess,
+    FixedCount(i32),
+    PercentSignal(f32),
+}
+
+impl NumPeaksSpec {
+    pub fn num_peaks(&self, composition: &ChemicalComposition) -> i32 {
+        match self {
+            Self::Guess => guess_npeaks(composition, 300),
+            Self::FixedCount(i) => (*i - 1).max(0),
+            Self::PercentSignal(val) => {
+                (poisson_approximate_n_peaks_of(composition.mass(), *val as f64) as i32 - 1).max(0)
+            }
+        }
+    }
+}
+
+impl From<f32> for NumPeaksSpec {
+    fn from(value: f32) -> Self {
+        Self::PercentSignal(value)
+    }
+}
+
+impl From<i32> for NumPeaksSpec {
+    fn from(value: i32) -> Self {
+        if value == 0 {
+            Self::Guess
+        } else {
+            Self::FixedCount(value)
+        }
+    }
+}
+
+impl From<usize> for NumPeaksSpec {
+    fn from(value: usize) -> Self {
+        match value {
+            0 => Self::Guess,
+            _ => Self::FixedCount(value as i32),
+        }
+    }
+}
+
+impl<T: Into<NumPeaksSpec>> From<Option<T>> for NumPeaksSpec {
+    fn from(value: Option<T>) -> Self {
+        match value {
+            Some(i) => i.into(),
+            None => Self::Guess,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -667,9 +719,7 @@ pub struct BafflingRecursiveIsotopicPatternGenerator<'lifespan> {
     parameter_cache: IsotopicConstantsCache<'lifespan>,
 }
 
-impl<'transient, 'lifespan: 'transient, 'outer: 'lifespan>
-    BafflingRecursiveIsotopicPatternGenerator<'lifespan>
-{
+impl<'lifespan, 'outer: 'lifespan> BafflingRecursiveIsotopicPatternGenerator<'lifespan> {
     pub fn new() -> BafflingRecursiveIsotopicPatternGenerator<'lifespan> {
         BafflingRecursiveIsotopicPatternGenerator {
             parameter_cache: IsotopicConstantsCache::new(),
@@ -680,28 +730,35 @@ impl<'transient, 'lifespan: 'transient, 'outer: 'lifespan>
     pub fn isotopic_variants<C: Into<ChemicalComposition<'outer>>>(
         &mut self,
         composition: C,
-        npeaks: i32,
+        npeaks: impl Into<NumPeaksSpec>,
         charge: i32,
         charge_carrier: f64,
     ) -> PeakList {
         let composition = composition.into();
-        let npeaks = if npeaks == 0 {
-            guess_npeaks(&composition, 300)
-        } else {
-            npeaks - 1
-        };
+        // let npeaks = if npeaks == 0 {
+        //     guess_npeaks(&composition, 300)
+        // } else {
+        //     npeaks - 1
+        // };
+        let npeaks = npeaks.into().num_peaks(&composition);
         let mut dist = IsotopicDistribution::fill_from_composition(composition, npeaks);
         dist.populate_constants_from_cache(&mut self.parameter_cache);
         let peaks = dist.isotopic_variants(charge, charge_carrier);
         self.parameter_cache.receive_from(dist.constants);
-        return peaks;
+        peaks
+    }
+}
+
+impl Default for BafflingRecursiveIsotopicPatternGenerator<'_> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use super::super::poisson_approximate_n_peaks_of;
+    use super::*;
     use crate::PROTON;
 
     #[test]
@@ -718,7 +775,6 @@ mod test {
         let comp = ChemicalComposition::parse("C6H13O5S1H3").unwrap();
         let peaks = isotopic_variants(comp, 0, 1, PROTON);
         assert_eq!(peaks.len(), 5);
-        assert!((peaks[0].neutral_mass() - 200.071846).abs() < 1e-6);
         assert!((peaks[0].intensity() - 0.8782583).abs() < 1e-6);
     }
 

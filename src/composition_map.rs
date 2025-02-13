@@ -1,5 +1,6 @@
 // #![allow(unused)]
 use std::collections::hash_map::{HashMap, Iter, IterMut};
+use std::fmt::Display;
 use std::iter::FromIterator;
 use std::ops::{Index, IndexMut};
 use std::str::FromStr;
@@ -7,7 +8,7 @@ use std::str::FromStr;
 use fnv::FnvBuildHasher;
 
 #[cfg(feature = "serde")]
-use serde_with::{SerializeDisplay, DeserializeFromStr};
+use serde_with::{DeserializeFromStr, SerializeDisplay};
 
 use crate::element_specification::{ElementSpecification, ElementSpecificationLike};
 use crate::formula::FormulaParserError;
@@ -28,7 +29,7 @@ pub struct ChemicalCompositionMap<'a> {
 /**
 # Basic Operations
 */
-impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
+impl<'lifespan> ChemicalCompositionMap<'lifespan> {
     /// Create a new, empty [`ChemicalCompositionMap`]
     pub fn new() -> ChemicalCompositionMap<'lifespan> {
         ChemicalCompositionMap {
@@ -40,10 +41,10 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
     /// Access a specific element's count, or `0` if that element is absent
     /// from the composition
     pub fn get(&self, elt_spec: &ElementSpecification<'lifespan>) -> i32 {
-        return match self.composition.get(elt_spec) {
+        match self.composition.get(elt_spec) {
             Some(i) => *i,
             None => 0,
-        };
+        }
     }
 
     #[inline]
@@ -63,12 +64,12 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
 
     #[inline]
     pub fn iter(&self) -> Iter<ElementSpecification<'lifespan>, i32> {
-        return (self.composition).iter();
+        (self.composition).iter()
     }
 
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<ElementSpecification<'lifespan>, i32> {
-        return (self.composition).iter_mut();
+        (self.composition).iter_mut()
     }
 
     /**
@@ -78,7 +79,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
         self.composition
     }
 
-    /**
+    /*
     # Mass calculation Methods
 
     [`ChemicalCompositionMap`] has three methods for computing the monoisotopic
@@ -98,9 +99,10 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
                 element.most_abundant_mass
             } else {
                 element.isotopes[&elt_spec.isotope].mass
-            }.mul_add(*count as f64, total);
+            }
+            .mul_add(*count as f64, total);
         }
-        return total;
+        total
     }
 
     #[inline]
@@ -109,11 +111,10 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
     has been populated, return that instead of repeating the calculation.
     */
     pub fn mass(&self) -> f64 {
-        let mass = match self.mass_cache {
+        match self.mass_cache {
             None => self.calc_mass(),
             Some(val) => val,
-        };
-        return mass;
+        }
     }
 
     #[inline]
@@ -123,15 +124,14 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
     must be called explicitly.
     */
     pub fn fmass(&mut self) -> f64 {
-        let mass = match self.mass_cache {
+        match self.mass_cache {
             None => {
                 let total = self.mass();
                 self.mass_cache = Some(total);
                 total
             }
             Some(val) => val,
-        };
-        return mass;
+        }
     }
 
     #[inline]
@@ -141,28 +141,30 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionMap<'lifespan> {
     }
 }
 
-/**
-*/
 impl<'lifespan, 'transient, 'outer: 'transient> ChemicalCompositionMap<'lifespan> {
     #[inline]
-    pub(crate) fn _add_from(&'outer mut self, other: &'transient ChemicalCompositionMap<'lifespan>) {
+    pub(crate) fn _add_from(
+        &'outer mut self,
+        other: &'transient ChemicalCompositionMap<'lifespan>,
+    ) {
         for (key, val) in other.composition.iter() {
-            self.inc(key.clone(), *val);
+            self.inc(*key, *val);
         }
     }
 
     #[inline]
-    pub(crate) fn _sub_from(&'outer mut self, other: &'transient ChemicalCompositionMap<'lifespan>) {
+    pub(crate) fn _sub_from(
+        &'outer mut self,
+        other: &'transient ChemicalCompositionMap<'lifespan>,
+    ) {
         for (key, val) in other.composition.iter() {
-            self.inc(key.clone(), -(*val));
+            self.inc(*key, -(*val));
         }
     }
 
     #[inline]
     pub(crate) fn _mul_by(&mut self, scaler: i32) {
-        self.iter_mut().for_each(|(_, v)| {
-            *v *= scaler
-        });
+        self.iter_mut().for_each(|(_, v)| *v *= scaler);
     }
 
     #[inline]
@@ -182,7 +184,7 @@ impl<'lifespan> Index<&ElementSpecification<'lifespan>> for ChemicalCompositionM
     #[inline]
     fn index(&self, key: &ElementSpecification<'lifespan>) -> &Self::Output {
         let ent = self.composition.get(key);
-        return ent.unwrap();
+        ent.unwrap()
     }
 }
 
@@ -190,7 +192,7 @@ impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalCompositi
     #[inline]
     fn index_mut(&mut self, key: &ElementSpecification<'lifespan>) -> &mut Self::Output {
         self.mass_cache = None;
-        let entry = self.composition.entry(key.clone());
+        let entry = self.composition.entry(*key);
         entry.or_insert(0)
     }
 }
@@ -205,7 +207,7 @@ for each operation. These methods take advantage of the way
 [`HashMap::get`](std::collections::HashMap::get) is parameterized to avoid
 constructing a new [`ElementSpecification`] unless absolutely necessary.
 */
-impl<'a> ChemicalCompositionMap<'a> {
+impl ChemicalCompositionMap<'_> {
     /// Get the quantity of an element by its symbol string.
     ///
     /// This method does not support fixed isotopes, but may
@@ -266,7 +268,7 @@ impl<'a> ChemicalCompositionMap<'a> {
 
 const ZERO: i32 = 0;
 
-impl<'lifespan> Index<&str> for ChemicalCompositionMap<'lifespan> {
+impl Index<&str> for ChemicalCompositionMap<'_> {
     type Output = i32;
 
     /**
@@ -290,7 +292,7 @@ impl<'lifespan> Index<&str> for ChemicalCompositionMap<'lifespan> {
     }
 }
 
-impl<'lifespan> IndexMut<&str> for ChemicalCompositionMap<'lifespan> {
+impl IndexMut<&str> for ChemicalCompositionMap<'_> {
     /** Using [`IndexMut`] with a [`&str`] will always construct a new
     [`ElementSpecification`] from the provided `&str`, in order to
     maintain the contract with with [`std::ops::Index`]
@@ -323,7 +325,7 @@ impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)>
         for (k, v) in iter {
             composition.inc(k, v);
         }
-        return composition;
+        composition
     }
 }
 
@@ -338,15 +340,14 @@ impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalCompositionMap<'
             let elt_spec = ElementSpecification::parse(k).unwrap();
             composition.inc(elt_spec, v);
         }
-        return composition;
+        composition
     }
 }
 
 impl<'lifespan> From<Vec<(&'lifespan str, i32)>> for ChemicalCompositionMap<'lifespan> {
     #[inline]
     fn from(elements: Vec<(&'lifespan str, i32)>) -> Self {
-        let composition: ChemicalCompositionMap<'lifespan> = elements.iter().cloned().collect();
-        return composition;
+        elements.iter().cloned().collect()
     }
 }
 
@@ -354,12 +355,11 @@ impl<'lifespan> From<Vec<(ElementSpecification<'lifespan>, i32)>>
     for ChemicalCompositionMap<'lifespan>
 {
     fn from(elements: Vec<(ElementSpecification<'lifespan>, i32)>) -> Self {
-        let composition: ChemicalCompositionMap<'lifespan> = elements.iter().cloned().collect();
-        return composition;
+        elements.iter().cloned().collect()
     }
 }
 
-impl<'a> FromStr for ChemicalCompositionMap<'a> {
+impl FromStr for ChemicalCompositionMap<'_> {
     type Err = FormulaParserError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -367,9 +367,9 @@ impl<'a> FromStr for ChemicalCompositionMap<'a> {
     }
 }
 
-impl<'lifespan> ToString for ChemicalCompositionMap<'lifespan> {
-    fn to_string(&self) -> String {
-        crate::formula::to_formula(self)
+impl Display for ChemicalCompositionMap<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&crate::formula::to_formula(self))
     }
 }
 

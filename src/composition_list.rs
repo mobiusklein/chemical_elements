@@ -1,14 +1,15 @@
 #![allow(unused)]
+use std::fmt::Display;
 use std::ops::{Add, AddAssign, Index, IndexMut, Mul, MulAssign, Neg, Sub, SubAssign};
 use std::slice::{Iter, IterMut};
 use std::str::FromStr;
 
 #[cfg(feature = "serde")]
-use serde_with::{SerializeDisplay, DeserializeFromStr};
+use serde_with::{DeserializeFromStr, SerializeDisplay};
 
-use crate::{FormulaParserError, PERIODIC_TABLE, PeriodicTable};
 use crate::element_specification::{ElementSpecification, ElementSpecificationLike};
 use crate::formula::FormulaParser;
+use crate::{FormulaParserError, PeriodicTable, PERIODIC_TABLE};
 
 #[derive(Debug, Clone, Default)]
 #[cfg_attr(feature = "serde", derive(DeserializeFromStr, SerializeDisplay))]
@@ -26,7 +27,7 @@ pub struct ChemicalCompositionVec<'a> {
 /**
 # Basic Operations
 */
-impl<'transient, 'lifespan: 'transient> ChemicalCompositionVec<'lifespan> {
+impl<'lifespan> ChemicalCompositionVec<'lifespan> {
     /// Create a new, empty [`ChemicalCompositionVec`]
     pub fn new() -> ChemicalCompositionVec<'lifespan> {
         ChemicalCompositionVec {
@@ -91,7 +92,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionVec<'lifespan> {
 
     #[inline]
     pub fn iter(&self) -> Iter<(ElementSpecification<'lifespan>, i32)> {
-        return (self.composition).iter();
+        (self.composition).iter()
     }
 
     pub fn iter_mut(&mut self) -> IterMut<(ElementSpecification<'lifespan>, i32)> {
@@ -114,7 +115,7 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionVec<'lifespan> {
         self.composition
     }
 
-    /**
+    /*
     # Mass calculation Methods
 
     [`ChemicalCompositionVec`] has three methods for computing the monoisotopic
@@ -134,9 +135,10 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionVec<'lifespan> {
                 element.most_abundant_mass
             } else {
                 element.isotopes[&elt_spec.isotope].mass
-            }.mul_add(*count as f64, total);
+            }
+            .mul_add(*count as f64, total);
         }
-        return total;
+        total
     }
 
     #[inline]
@@ -145,11 +147,10 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionVec<'lifespan> {
     has been populated, return that instead of repeating the calculation.
     */
     pub fn mass(&self) -> f64 {
-        let mass = match self.mass_cache {
+        match self.mass_cache {
             None => self.calc_mass(),
             Some(val) => val,
-        };
-        return mass;
+        }
     }
 
     #[inline]
@@ -159,15 +160,14 @@ impl<'transient, 'lifespan: 'transient> ChemicalCompositionVec<'lifespan> {
     must be called explicitly.
     */
     pub fn fmass(&mut self) -> f64 {
-        let mass = match self.mass_cache {
+        match self.mass_cache {
             None => {
                 let total = self.mass();
                 self.mass_cache = Some(total);
                 total
             }
             Some(val) => val,
-        };
-        return mass;
+        }
     }
 
     #[inline]
@@ -201,7 +201,7 @@ impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalCompositi
             let (_, out) = self.composition.get_mut(i).unwrap();
             out
         } else {
-            self.set(key.clone(), 0);
+            self.set(*key, 0);
             let i = self.composition.len() - 1;
             let (_, out) = self.composition.get_mut(i).unwrap();
             out
@@ -209,7 +209,7 @@ impl<'lifespan> IndexMut<&ElementSpecification<'lifespan>> for ChemicalCompositi
     }
 }
 
-impl<'lifespan> Index<&str> for ChemicalCompositionVec<'lifespan> {
+impl Index<&str> for ChemicalCompositionVec<'_> {
     type Output = i32;
 
     /**
@@ -233,7 +233,7 @@ impl<'lifespan> Index<&str> for ChemicalCompositionVec<'lifespan> {
     }
 }
 
-impl<'lifespan> IndexMut<&str> for ChemicalCompositionVec<'lifespan> {
+impl IndexMut<&str> for ChemicalCompositionVec<'_> {
     /** Using [`IndexMut`] with a [`&str`] will always construct a new
     [`ElementSpecification`] from the provided `&str`, in order to
     maintain the contract with with [`std::ops::Index`]
@@ -249,16 +249,22 @@ impl<'lifespan> IndexMut<&str> for ChemicalCompositionVec<'lifespan> {
 
 impl<'lifespan, 'transient, 'outer: 'transient> ChemicalCompositionVec<'lifespan> {
     #[inline]
-    pub(crate) fn _add_from(&'outer mut self, other: &'transient ChemicalCompositionVec<'lifespan>) {
+    pub(crate) fn _add_from(
+        &'outer mut self,
+        other: &'transient ChemicalCompositionVec<'lifespan>,
+    ) {
         for (key, val) in other.iter() {
-            self.inc(key.clone(), *val);
+            self.inc(*key, *val);
         }
     }
 
     #[inline]
-    pub(crate) fn _sub_from(&'outer mut self, other: &'transient ChemicalCompositionVec<'lifespan>) {
+    pub(crate) fn _sub_from(
+        &'outer mut self,
+        other: &'transient ChemicalCompositionVec<'lifespan>,
+    ) {
         for (key, val) in other.iter() {
-            self.inc(key.clone(), -(*val));
+            self.inc(*key, -(*val));
         }
     }
 
@@ -286,13 +292,10 @@ impl<'lifespan> PartialEq<ChemicalCompositionVec<'lifespan>> for ChemicalComposi
         if self.len() != other.len() {
             false
         } else {
-            self.iter().all(|(k, v)| {
-                other.get(k) == *v
-            })
+            self.iter().all(|(k, v)| other.get(k) == *v)
         }
     }
 }
-
 
 impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)>
     for ChemicalCompositionVec<'lifespan>
@@ -306,7 +309,7 @@ impl<'lifespan> FromIterator<(ElementSpecification<'lifespan>, i32)>
         for (k, v) in iter {
             composition.inc(k, v);
         }
-        return composition;
+        composition
     }
 }
 
@@ -321,15 +324,14 @@ impl<'lifespan> FromIterator<(&'lifespan str, i32)> for ChemicalCompositionVec<'
             let elt_spec = ElementSpecification::parse(k).unwrap();
             composition.inc(elt_spec, v);
         }
-        return composition;
+        composition
     }
 }
 
 impl<'lifespan> From<Vec<(&'lifespan str, i32)>> for ChemicalCompositionVec<'lifespan> {
     #[inline]
     fn from(elements: Vec<(&'lifespan str, i32)>) -> Self {
-        let composition: ChemicalCompositionVec<'lifespan> = elements.iter().cloned().collect();
-        return composition;
+        elements.iter().cloned().collect()
     }
 }
 
@@ -337,15 +339,14 @@ impl<'lifespan> From<Vec<(ElementSpecification<'lifespan>, i32)>>
     for ChemicalCompositionVec<'lifespan>
 {
     fn from(elements: Vec<(ElementSpecification<'lifespan>, i32)>) -> Self {
-        let composition = ChemicalCompositionVec {
+        ChemicalCompositionVec {
             composition: elements,
             mass_cache: None,
-        };
-        return composition;
+        }
     }
 }
 
-impl<'a> FromStr for ChemicalCompositionVec<'a> {
+impl FromStr for ChemicalCompositionVec<'_> {
     type Err = FormulaParserError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -354,9 +355,9 @@ impl<'a> FromStr for ChemicalCompositionVec<'a> {
     }
 }
 
-impl<'lifespan> ToString for ChemicalCompositionVec<'lifespan> {
-    fn to_string(&self) -> String {
-        crate::formula::to_formula(self)
+impl Display for ChemicalCompositionVec<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&crate::formula::to_formula(self))
     }
 }
 

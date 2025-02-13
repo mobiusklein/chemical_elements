@@ -40,21 +40,24 @@ pub fn poisson_approximation_impl(
             intensities.push(0.0);
         }
     }
-    for i in 0..n_peaks {
+    (0..n_peaks).for_each(|i| {
         let mz = mass_charge_ratio(mass + (i as f64 * NEUTRON_SHIFT), charge, PROTON);
         let peak = Peak {
             mz,
             intensity: intensities[i] / total,
-            charge: charge,
         };
         peak_list.push(peak);
-    }
+    });
 
     peak_list
 }
 
-
-pub fn poisson_approximate_n_peaks_of_impl(mass: f64, lambda_factor: f64, threshold: f64, max_iter: usize) -> usize {
+pub fn poisson_approximate_n_peaks_of_impl(
+    mass: f64,
+    lambda_factor: f64,
+    threshold: f64,
+    max_iter: usize,
+) -> usize {
     let lambda = mass / lambda_factor;
     let mut p_i = 1.0;
     let mut factorial_acc = 1.0;
@@ -67,27 +70,21 @@ pub fn poisson_approximate_n_peaks_of_impl(mass: f64, lambda_factor: f64, thresh
         factorial_acc *= i as f64;
         let cur_intensity = p_i / factorial_acc;
         if cur_intensity.is_infinite() {
-            return i
+            return i;
         }
         acc += cur_intensity;
         if cur_intensity / acc < target_threshold {
-            return i
+            return i;
         }
     }
-    return 0
+    0
 }
-
 
 /// This algorithm approximates the isotopic pattern of `mass` at `charge`
 /// with `n_peaks` peaks included.
-pub fn poisson_approximation(
-    mass: f64,
-    n_peaks: usize,
-    charge: i32,
-) -> PeakList {
+pub fn poisson_approximation(mass: f64, n_peaks: usize, charge: i32) -> PeakList {
     poisson_approximation_impl(mass, n_peaks, charge, LAMBDA_FACTOR)
 }
-
 
 /// This algorithm approximates the number of peaks in an isotopic pattern of `mass`
 /// until `threshold`% signal is generated.
@@ -95,13 +92,12 @@ pub fn poisson_approximate_n_peaks_of(mass: f64, threshold: f64) -> usize {
     poisson_approximate_n_peaks_of_impl(mass, LAMBDA_FACTOR, threshold, 255)
 }
 
-
 #[cfg(test)]
 mod test {
     use crate::isotopic_pattern::poisson::NEUTRON_SHIFT;
 
-    use super::{poisson_approximation, poisson_approximate_n_peaks_of};
     use super::super::{Peak, PeakList};
+    use super::{poisson_approximate_n_peaks_of, poisson_approximation};
 
     #[test]
     fn test_approximate() {
@@ -109,7 +105,7 @@ mod test {
         assert_eq!(peak_list.len(), 4);
 
         let mut acc = 0.0;
-        for i in 0..peak_list.len() {
+        (0..peak_list.len()).for_each(|i| {
             let peak: &Peak = &peak_list[i];
             acc += peak.intensity;
             let mz_delta = peak.mz - 376.007276;
@@ -118,7 +114,7 @@ mod test {
             } else {
                 assert!(mz_delta < NEUTRON_SHIFT * 4.0);
             }
-        }
+        });
         assert!((acc - 1.0).abs() < 1e-3);
     }
 

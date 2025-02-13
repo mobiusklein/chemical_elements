@@ -5,17 +5,15 @@ use std::hash;
 use std::ops;
 
 #[cfg(feature = "serde")]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use fnv::FnvBuildHasher as RandomState;
-
 
 type NeutronShiftType = i8;
 type ElementNumberType = u8;
 
-
 #[derive(Debug, Clone, Default)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /** A known isotope of an element with a known number of neutrons,
 mass, and relative abundance
 */
@@ -44,31 +42,25 @@ impl hash::Hash for Isotope {
 
 impl cmp::PartialEq<Isotope> for Isotope {
     fn eq(&self, other: &Isotope) -> bool {
-        if (self.mass - other.mass).abs() > 1e-3 {
-            return false;
-        } else if (self.abundance - other.abundance).abs() > 1e-3 {
-            return false;
-        } else if self.neutrons != other.neutrons {
-            return false;
-        } else if self.neutron_shift != other.neutron_shift {
+        if (self.mass - other.mass).abs() > 1e-3
+            || (self.abundance - other.abundance).abs() > 1e-3
+            || self.neutrons != other.neutrons
+            || self.neutron_shift != other.neutron_shift
+        {
             return false;
         }
-        return true;
-    }
-
-    fn ne(&self, other: &Isotope) -> bool {
-        return !(self == other);
+        true
     }
 }
 
 impl cmp::PartialOrd<Isotope> for Isotope {
     fn partial_cmp(&self, other: &Isotope) -> Option<cmp::Ordering> {
-        return self.mass.partial_cmp(&other.mass);
+        self.mass.partial_cmp(&other.mass)
     }
 }
 
 #[derive(Debug, Clone, Default)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /** A chemical element with known masses and isotopic frequency.
 
 This type forms the foundation of the library, and is *usually*
@@ -86,27 +78,29 @@ pub struct Element {
 
 impl Element {
     pub fn mass(&self) -> f64 {
-        return self.isotopes[&self.most_abundant_isotope].mass;
+        self.isotopes[&self.most_abundant_isotope].mass
     }
 
     pub fn calc_min_neutron_shift(&self) -> NeutronShiftType {
         if self.min_neutron_shift != 0 {
             return self.min_neutron_shift;
         }
-        match self.isotopes.values().map(|iso| iso.neutron_shift).min() {
-            Some(i) => i,
-            None => 0,
-        }
+        self.isotopes
+            .values()
+            .map(|iso| iso.neutron_shift)
+            .min()
+            .unwrap_or(0)
     }
 
     pub fn calc_max_neutron_shift(&self) -> NeutronShiftType {
         if self.max_neutron_shift != 0 {
             return self.max_neutron_shift;
         }
-        match self.isotopes.values().map(|iso| iso.neutron_shift).max() {
-            Some(i) => i,
-            None => 0,
-        }
+        self.isotopes
+            .values()
+            .map(|iso| iso.neutron_shift)
+            .max()
+            .unwrap_or(0)
     }
 
     pub fn isotope_by_shift(&self, shift: NeutronShiftType) -> Option<&Isotope> {
@@ -144,21 +138,16 @@ impl hash::Hash for Element {
 impl cmp::PartialEq<Element> for Element {
     #[inline]
     fn eq(&self, other: &Element) -> bool {
-        if self.symbol != other.symbol {
-            return false;
-        } else if self.most_abundant_isotope != other.most_abundant_isotope {
+        if self.symbol != other.symbol || self.most_abundant_isotope != other.most_abundant_isotope
+        {
             return false;
         }
-        return true;
-    }
-
-    fn ne(&self, other: &Element) -> bool {
-        return !(self == other);
+        true
     }
 }
 
 #[derive(Debug, Clone, Default)]
-#[cfg_attr(feature="serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /** A mapping connecting [`Element`] to its textual symbol.
 
 This type is referenced indirectly through all other structures
@@ -172,9 +161,9 @@ pub struct PeriodicTable {
 
 impl PeriodicTable {
     pub fn new() -> PeriodicTable {
-        return PeriodicTable {
+        PeriodicTable {
             ..Default::default()
-        };
+        }
     }
 
     pub fn add(&mut self, element: Element) {
@@ -191,6 +180,6 @@ impl ops::Index<&str> for PeriodicTable {
 
     #[inline]
     fn index(&self, i: &str) -> &Self::Output {
-        return &self.elements[i];
+        &self.elements[i]
     }
 }

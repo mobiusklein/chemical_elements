@@ -1,7 +1,7 @@
 use crate::table::{populate_periodic_table, PERIODIC_TABLE};
 use crate::{
     ChemicalComposition, ElementSpecification, ElementSpecificationParsingError,
-    FormulaParserError, PeriodicTable
+    FormulaParserError, PeriodicTable,
 };
 
 #[allow(non_snake_case)]
@@ -63,6 +63,11 @@ impl<'transient, 'lifespan: 'transient> ChemicalElements<'lifespan> {
     }
 }
 
+impl Default for ChemicalElements<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[cfg(test)]
 mod test {
