@@ -84,7 +84,7 @@ mod mzpeaks_interface {
 
 pub type PeakList = Vec<Peak>;
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /**
 A theoretical isotopic pattern that supports a variety of mutating
@@ -93,6 +93,18 @@ transformations.
 pub struct TheoreticalIsotopicPattern {
     pub peaks: PeakList,
     pub origin: f64,
+}
+
+impl Clone for TheoreticalIsotopicPattern {
+    fn clone(&self) -> Self {
+        Self { peaks: self.peaks.clone(), origin: self.origin }
+    }
+
+    fn clone_from(&mut self, source: &Self) {
+        self.peaks.clear();
+        self.origin = source.origin;
+        self.peaks.extend_from_slice(&source.peaks);
+    }
 }
 
 impl TheoreticalIsotopicPattern {
