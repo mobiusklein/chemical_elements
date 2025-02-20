@@ -249,15 +249,15 @@ impl From<Peak> for PyPeak {
     }
 }
 
-#[pyfunction]
+#[pyfunction(signature = (composition, npeaks = None, charge = None))]
 fn isotopic_variants(
     mut composition: PyChemicalComposition,
-    npeaks: i32,
-    charge: i32,
+    npeaks: Option<i32>,
+    charge: Option<i32>,
 ) -> PyResult<Vec<PyPeak>> {
     let inner = composition.inner;
-    let dist = IsotopicDistribution::from_composition(inner, npeaks - 1);
-    let isotopic_peaks = dist.isotopic_variants(charge, PROTON);
+    let dist = IsotopicDistribution::from_composition(inner, npeaks);
+    let isotopic_peaks = dist.isotopic_variants(charge.unwrap_or(1i32), PROTON);
     composition.inner = dist.composition;
     Ok(isotopic_peaks.into_iter().map(|p| p.into()).collect())
 }

@@ -411,7 +411,7 @@ pub struct IsotopicDistribution<'lifespan, 'outer> {
 impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<'lifespan, 'outer> {
     pub fn from_composition(
         composition: ChemicalComposition<'lifespan>,
-        order: i32,
+        order: impl Into<NumPeaksSpec>,
     ) -> IsotopicDistribution<'lifespan, 'lifespan> {
         let mut inst = IsotopicDistribution::fill_from_composition(composition, order);
         inst.populate_constants();
@@ -420,8 +420,11 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
 
     fn fill_from_composition(
         composition: ChemicalComposition<'outer>,
-        order: i32,
+        order: impl Into<NumPeaksSpec>,
     ) -> IsotopicDistribution<'lifespan, 'outer> {
+        let order: NumPeaksSpec = order.into();
+        let order = order.num_peaks(&composition);
+
         let mut inst = IsotopicDistribution {
             constants: IsotopicConstants::new(composition.len()),
             max_variants: max_variants(&composition),
@@ -433,14 +436,14 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
                 intensity: 0.0,
             },
         };
-        inst.update_order(order);
+        inst.update_order(order + 1);
         inst.monoisotopic_peak = inst.make_monoisotopic_peak();
         inst
     }
 
     pub fn from_composition_and_cache(
         composition: ChemicalComposition<'outer>,
-        order: i32,
+        order: impl Into<NumPeaksSpec>,
         cache: &'transient mut IsotopicConstantsCache<'outer>,
     ) -> IsotopicDistribution<'lifespan, 'outer> {
         let mut inst = IsotopicDistribution::fill_from_composition(composition, order);
@@ -616,10 +619,12 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
         let total: f64 = probability_vector.iter().sum();
         let mut peak_list = PeakList::with_capacity((self.order + 1) as usize);
 
-        (0..self.order as usize + 1).for_each(|i| {
-            let center_mass_i = center_mass_vector[i];
-            let intensity_i = probability_vector[i];
-
+        for (center_mass_i, intensity_i) in center_mass_vector
+            .iter()
+            .copied()
+            .zip(probability_vector)
+            .take(self.order as usize + 1)
+        {
             let adjusted_mz = if charge != 0 {
                 mass_charge_ratio(center_mass_i, charge, charge_carrier)
             } else {
@@ -632,11 +637,11 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
             };
 
             if peak.intensity < 1e-10 {
-                return;
+                break;
             }
 
             peak_list.push(peak);
-        });
+        }
 
         peak_list.sort_by(|a, b| a.mz.partial_cmp(&b.mz).unwrap());
         peak_list
