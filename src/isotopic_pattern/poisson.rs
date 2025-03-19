@@ -77,7 +77,7 @@ pub fn poisson_approximate_n_peaks_of_impl(
             return i;
         }
     }
-    0
+    max_iter
 }
 
 /// This algorithm approximates the isotopic pattern of `mass` at `charge`
@@ -122,5 +122,18 @@ mod test {
     fn test_approximate_n_peaks() {
         let n = poisson_approximate_n_peaks_of(750.0, 0.95);
         assert_eq!(n, 3);
+    }
+
+    #[test]
+    fn test_approximate_n_peaks_zero() {
+        let n = poisson_approximate_n_peaks_of(0.0, 0.95);
+        eprintln!("{n}");
+        assert!(n > 0, "{n} should not be zero!");
+    }
+
+    #[test]
+    fn test_approximate_n_peaks_overflow() {
+        let n = poisson_approximate_n_peaks_of(39999000.234256, 0.9999);
+        assert!(n > 0, "{n} should not be zero!");
     }
 }

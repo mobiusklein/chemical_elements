@@ -619,6 +619,7 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
         let total: f64 = probability_vector.iter().sum();
         let mut peak_list = PeakList::with_capacity((self.order + 1) as usize);
 
+        let mut has_real_peaks = false;
         for (center_mass_i, intensity_i) in center_mass_vector
             .iter()
             .copied()
@@ -636,11 +637,19 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
                 intensity: intensity_i / total,
             };
 
+            // If we've already started accumulating *real* peaks (int > 1e-10) already, we must
+            // be tailing off so exit early. Otherwise, keep accumulating. Check if each
+            // peak we do collect qualify as *real*.
             if peak.intensity < 1e-10 {
-                break;
+                if !has_real_peaks {
+                    peak_list.push(peak);
+                } else {
+                    break;
+                }
+            } else {
+                has_real_peaks = true;
+                peak_list.push(peak);
             }
-
-            peak_list.push(peak);
         }
 
         peak_list.sort_by(|a, b| a.mz.partial_cmp(&b.mz).unwrap());
@@ -802,8 +811,17 @@ mod test {
         let comp = ChemicalComposition::parse("C6H12O6").unwrap();
         let comp = comp * 6;
         let m = comp.mass();
-        let max_vars = guess_npeaks(&comp, 300);
+        let max_vars = guess_npeaks(&comp, 300) as usize;
         let approx = poisson_approximate_n_peaks_of(m, 0.999);
-        eprintln!("{} > {}", max_vars, approx);
+        assert!(max_vars > approx, "{} > {}", max_vars, approx);
+    }
+
+    #[test]
+    fn test_burn_in() {
+        let comp = ChemicalComposition::parse("C6H12O6").unwrap();
+        let comp = comp * (2i32.pow(10u32));
+        let peaks = isotopic_variants(comp.clone(), NumPeaksSpec::Guess, 0, PROTON);
+        eprintln!("{peaks:?}");
+        assert!(!peaks.is_empty())
     }
 }
