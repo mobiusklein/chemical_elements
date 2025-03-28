@@ -1,3 +1,5 @@
+//! Define peaks and peak lists for theoretical isotopic patterns.
+//!
 use std::cmp;
 use std::fmt;
 use std::ops;
@@ -344,6 +346,15 @@ impl From<PeakList> for TheoreticalIsotopicPattern {
         Self::new(src, origin)
     }
 }
+
+
+impl From<TheoreticalIsotopicPattern> for PeakList {
+    #[inline]
+    fn from(src: TheoreticalIsotopicPattern) -> Self {
+        src.peaks
+    }
+}
+
 
 impl PartialEq for TheoreticalIsotopicPattern {
     fn eq(&self, other: &Self) -> bool {

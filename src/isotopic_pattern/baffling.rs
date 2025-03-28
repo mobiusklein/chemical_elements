@@ -10,54 +10,15 @@ use crate::{mass_charge_ratio, ChemicalComposition, ElementSpecification};
 
 use fnv::FnvBuildHasher as RandomState;
 
-pub type DVec = Vec<f64>;
-
-#[derive(Debug, Default, Clone)]
-pub struct ElementRegistry {
-    store: HashMap<String, usize, RandomState>,
-    counter: usize,
-}
-
-impl ElementRegistry {
-    pub fn new(store: HashMap<String, usize, RandomState>) -> Self {
-        let counter = if !store.is_empty() {
-            store.values().max().unwrap() + 1
-        } else {
-            0
-        };
-
-        Self { store, counter }
-    }
-
-    pub fn get(&self, element_name: &str) -> Option<usize> {
-        self.store.get(element_name).copied()
-    }
-
-    pub fn register(&mut self, element_name: &str) -> usize {
-        if let Some(val) = self.store.get(element_name) {
-            return *val;
-        }
-
-        let val = self.counter;
-        self.store.insert(element_name.to_string(), val);
-        self.counter += 1;
-        val
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct ElementKey<'a> {
-    pub element: &'a Element,
-    pub key: usize,
-}
+type DVec = Vec<f64>;
 
 #[derive(Debug, Clone)]
-pub struct PolynomialParameters {
+struct PolynomialParameters {
     elementary_symmetric_polynomial: DVec,
     power_sum: DVec,
 }
 
-pub fn vietes(coefficients: &DVec) -> DVec {
+fn vietes(coefficients: &DVec) -> DVec {
     let n = coefficients.len();
     let mut esp = DVec::with_capacity(n);
     let tail = coefficients[n - 1];
@@ -183,8 +144,8 @@ impl PolynomialParameters {
 pub struct PhiConstants {
     pub order: i32,
     pub element_key: String,
-    pub element_coefficients: PolynomialParameters,
-    pub mass_coefficients: PolynomialParameters,
+    element_coefficients: PolynomialParameters,
+    mass_coefficients: PolynomialParameters,
 }
 
 impl PhiConstants {
@@ -202,25 +163,9 @@ impl PhiConstants {
             mass_coefficients,
         }
     }
-
-    pub fn from_element_key(element_key: &ElementKey) -> PhiConstants {
-        let mut accumulator = DVec::new();
-        let order = element_key.element.max_neutron_shift as i32;
-        let element_coefficients =
-            PolynomialParameters::from_element(element_key.element, false, &mut accumulator);
-        accumulator.clear();
-        let mass_coefficients =
-            PolynomialParameters::from_element(element_key.element, true, &mut accumulator);
-        PhiConstants {
-            element_key: element_key.element.symbol.clone(),
-            order,
-            element_coefficients,
-            mass_coefficients,
-        }
-    }
 }
 
-pub type PhiKey = str;
+type PhiKey = str;
 
 #[derive(Debug, Clone)]
 pub struct IsotopicConstants<'lifespan> {
@@ -232,7 +177,6 @@ pub struct IsotopicConstants<'lifespan> {
 impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
     pub fn new(size: usize) -> IsotopicConstants<'lifespan> {
         IsotopicConstants {
-            // constants: HashMap::with_capacity_and_hasher(size, RandomState::default()),
             constants: Vec::with_capacity(size),
             order: 0,
         }
@@ -259,10 +203,6 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
         let phi = PhiConstants::from_element(element);
         // self.constants.insert(element.symbol.as_ref(), phi);
         self.set(element.symbol.as_ref(), phi);
-    }
-
-    pub fn add_key(&mut self, element_key: &'outer ElementKey) {
-        self.add(element_key.element)
     }
 
     pub fn update(&mut self) {
@@ -312,7 +252,7 @@ impl<'lifespan, 'outer: 'lifespan> IsotopicConstants<'lifespan> {
 
 #[derive(Debug, Clone)]
 pub struct IsotopicConstantsCache<'lifespan> {
-    pub cache: HashMap<&'lifespan PhiKey, PhiConstants, RandomState>,
+    pub(crate) cache: HashMap<&'lifespan PhiKey, PhiConstants, RandomState>,
 }
 
 impl<'lifespan> IsotopicConstantsCache<'lifespan> {
@@ -357,7 +297,7 @@ impl Default for IsotopicConstantsCache<'_> {
     }
 }
 
-pub fn max_variants(composition: &ChemicalComposition) -> i32 {
+fn max_variants(composition: &ChemicalComposition) -> i32 {
     let acc = composition
         .iter()
         .map(|(elt, cnt)| elt.element.max_neutron_shift as i32 * *cnt)
@@ -365,6 +305,9 @@ pub fn max_variants(composition: &ChemicalComposition) -> i32 {
     acc
 }
 
+
+/// Guess the maximum number of peaks to generate for a chemical composition's isotopic pattern,
+/// up to `max_npeaks`, using a [`poisson_approximate_n_peaks_of`].
 pub fn guess_npeaks(composition: &ChemicalComposition, max_npeaks: i32) -> i32 {
     // let total_variants = max_variants(composition);
     // let npeaks = (total_variants as f64).sqrt() as i32 - 2;
@@ -657,10 +600,16 @@ impl<'lifespan: 'transient, 'transient, 'outer: 'lifespan> IsotopicDistribution<
     }
 }
 
-/// Generate a coarse isotopic pattern from a [`ChemicalComposition`]
-/// with the specified peak count and charge state.
+
+/// Generate a coarse isotopic pattern from a [`ChemicalComposition`] with the specified charge state
+/// and number of peaks.
 ///
-/// if `npeaks` is 0, a guess will be used.
+/// # Parameters
+/// - `composition`: The chemical composition to compute the isotopic pattern for.
+/// - `npeaks`: A value that coerces to [`NumPeaksSpec`] which determines how many isotopic
+///             peaks to generate.
+/// - `charge`: The charge state to compute the isotopic pattern in.
+/// - `charge_carrier`: The mass shift of the charge carrier, e.g. the mass of a proton.
 pub fn isotopic_variants<'a, C: Into<ChemicalComposition<'a>>>(
     composition: C,
     npeaks: impl Into<NumPeaksSpec>,
@@ -674,11 +623,20 @@ pub fn isotopic_variants<'a, C: Into<ChemicalComposition<'a>>>(
     dist.isotopic_variants(charge, charge_carrier)
 }
 
+/// Handle different strategies for specifying the number of isotopic peaks to generate.
+///
+/// This argument type tries to convert from a range of viable types.
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub enum NumPeaksSpec {
+    /// Guess the number of peaks to include. By default this will be enough peaks to
+    /// include 99.99% of the signal or 300, whichever is fewer. Approximated using
+    /// [`poisson_approximate_n_peaks_of`].
     #[default]
     Guess,
+    /// Include exactly the specified number of peaks
     FixedCount(i32),
+    /// Include the specified percentage of the total signal, approximated using
+    /// [`poisson_approximate_n_peaks_of`]
     PercentSignal(f32),
 }
 
@@ -740,6 +698,15 @@ impl<'lifespan, 'outer: 'lifespan> BafflingRecursiveIsotopicPatternGenerator<'li
         }
     }
 
+    /// Generate a coarse isotopic pattern from a [`ChemicalComposition`] with the specified charge state
+    /// and number of peaks.
+    ///
+    /// # Parameters
+    /// - `composition`: The chemical composition to compute the isotopic pattern for.
+    /// - `npeaks`: A value that coerces to [`NumPeaksSpec`] which determines how many isotopic
+    ///             peaks to generate.
+    /// - `charge`: The charge state to compute the isotopic pattern in.
+    /// - `charge_carrier`: The mass shift of the charge carrier, e.g. the mass of a proton.
     #[inline]
     pub fn isotopic_variants<C: Into<ChemicalComposition<'outer>>>(
         &mut self,
@@ -749,11 +716,6 @@ impl<'lifespan, 'outer: 'lifespan> BafflingRecursiveIsotopicPatternGenerator<'li
         charge_carrier: f64,
     ) -> PeakList {
         let composition = composition.into();
-        // let npeaks = if npeaks == 0 {
-        //     guess_npeaks(&composition, 300)
-        // } else {
-        //     npeaks - 1
-        // };
         let npeaks = npeaks.into().num_peaks(&composition);
         let mut dist = IsotopicDistribution::fill_from_composition(composition, npeaks);
         dist.populate_constants_from_cache(&mut self.parameter_cache);

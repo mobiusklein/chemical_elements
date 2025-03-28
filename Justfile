@@ -6,11 +6,11 @@ t:
 alias test := t
 
 doc:
-    cargo doc --lib --no-deps
+    cargo doc --lib --no-deps -F doc-only
 
 docmath:
     cargo clean --doc
-    RUSTDOCFLAGS="--html-in-header doc/katex.html" cargo doc --lib --no-deps -v
+    RUSTDOCFLAGS="--html-in-header doc/katex.html" cargo doc --lib --no-deps -v  -F doc-only
 
 changelog tag:
     git cliff -t {{tag}} -o CHANGELOG.md

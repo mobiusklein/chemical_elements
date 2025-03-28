@@ -1,6 +1,5 @@
-//! Approximate the maximum number of isotopic peaks to include in an isotopic distribution
-//! approximation for biomolecules using the Poisson distribution, using the method described
-//! in Bellew et al:
+//! Approximate an isotopic distribution  for biomolecules using the Poisson distribution,
+//! using the method described in [Bellew, 2006](https://doi.org/10.1093/bioinformatics/btl276).
 //!
 //! Bellew, M., Coram, M., Fitzgibbon, M., Igra, M., Randolph, T., Wang, P., May, D., Eng, J., Fang, R., Lin, C., Chen, J.,
 //! Goodlett, D., Whiteaker, J., Paulovich, A., & Mcintosh, M. (2006). A suite of algorithms for the comprehensive analysis
@@ -12,6 +11,7 @@ use crate::mz::{mass_charge_ratio, PROTON};
 const NEUTRON_SHIFT: f64 = 1.0033548378;
 const LAMBDA_FACTOR: f64 = 1800.0;
 
+/// See [`poisson_approximation`]
 pub fn poisson_approximation_impl(
     mass: f64,
     n_peaks: usize,
@@ -52,6 +52,7 @@ pub fn poisson_approximation_impl(
     peak_list
 }
 
+/// See [`poisson_approximate_n_peaks_of`]
 pub fn poisson_approximate_n_peaks_of_impl(
     mass: f64,
     lambda_factor: f64,
@@ -82,12 +83,18 @@ pub fn poisson_approximate_n_peaks_of_impl(
 
 /// This algorithm approximates the isotopic pattern of `mass` at `charge`
 /// with `n_peaks` peaks included.
+///
+/// This uses the $\lambda$ value from Bellew et al. To use another value,
+/// use [`poisson_approximation_impl`]
 pub fn poisson_approximation(mass: f64, n_peaks: usize, charge: i32) -> PeakList {
     poisson_approximation_impl(mass, n_peaks, charge, LAMBDA_FACTOR)
 }
 
 /// This algorithm approximates the number of peaks in an isotopic pattern of `mass`
 /// until `threshold`% signal is generated.
+///
+/// This uses the $\lambda$ value from Bellew et al. To use another value,
+/// use [`poisson_approximate_n_peaks_of_impl`]
 pub fn poisson_approximate_n_peaks_of(mass: f64, threshold: f64) -> usize {
     poisson_approximate_n_peaks_of_impl(mass, LAMBDA_FACTOR, threshold, 255)
 }
